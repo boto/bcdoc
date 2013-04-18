@@ -11,166 +11,9 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 import sys
-import textwrap
-from six.moves import html_parser
-from six.moves import cStringIO
-from .style import ReSTStyle
+from .document import Document
 
 ScalarTypes = ('string', 'integer', 'boolean', 'timestamp', 'float', 'double')
-
-
-class HelpParser(html_parser.HTMLParser):
-    """
-    A simple HTML parser.  Really focused only on
-    the subset of HTML that shows up in the documentation strings
-    found in the models.
-    """
-
-    def __init__(self, doc):
-        html_parser.HTMLParser.__init__(self)
-        self.doc = doc
-        self.unhandled_tags = []
-
-    def handle_starttag(self, tag, attrs):
-        handler_name = 'start_%s' % tag
-        if hasattr(self.doc.style, handler_name):
-            s = getattr(self.doc.style, handler_name)(attrs)
-            if s:
-                self.doc.get_current_paragraph().write(s)
-        else:
-            self.unhandled_tags.append(tag)
-
-    def handle_endtag(self, tag):
-        handler_name = 'end_%s' % tag
-        if hasattr(self.doc.style, handler_name):
-            s = getattr(self.doc.style, handler_name)()
-            if s:
-                self.doc.get_current_paragraph().write(s)
-        else:
-            self.doc.get_current_paragraph().write(' ')
-
-    def handle_data(self, data):
-        data = data.replace('\n', '')
-        if not data:
-            return
-        if data.isspace():
-            data = ' '
-        words = data.split()
-        words = self.doc.translate_words(words)
-        data = ' '.join(words)
-        begin_space = data[0].isspace()
-        end_space = data[-1].isspace()
-        if begin_space:
-            if len(data) > 0 and not data[0].isupper():
-                data = ' ' + data
-        if end_space:
-            if len(data) > 0 and data[-1] != '.':
-                data = data + ' '
-        self.doc.handle_data(data)
-
-    def handle_data(self, data):
-        if data.isspace():
-            data = ' '
-        else:
-            end_space = data[-1].isspace()
-            words = data.split()
-            words = self.doc.translate_words(words)
-            data = ' '.join(words)
-            if end_space:
-                data += ' '
-        self.doc.handle_data(data)
-
-
-class Paragraph(object):
-
-    def __init__(self, doc, width, initial_indent):
-        self.doc = doc
-        self.width = width
-        self.initial_indent = initial_indent
-        self.subsequent_indent = initial_indent
-        self.lines_before = 0
-        self.lines_after = 1
-        self.fp = cStringIO()
-        self.current_char = None
-
-    def write(self, s):
-        if self.doc.keep_data:
-            self.fp.write(s)
-            if s:
-                self.current_char = s[-1]
-
-    def wrap(self):
-        init_indent = self.doc.style.spaces(self.initial_indent)
-        sub_indent = self.doc.style.spaces(self.subsequent_indent)
-        s = textwrap.fill(self.fp.getvalue(), self.width,
-                          initial_indent=init_indent,
-                          subsequent_indent=sub_indent,
-                          break_on_hyphens=False)
-        return '\n' * self.lines_before + s + '\n' * self.lines_after
-
-
-class Document(object):
-
-    def __init__(self, session):
-        self.session = session
-        self.style = ReSTStyle(self)
-        self.width = 80
-        self.help_parser = HelpParser(self)
-        self.paragraphs = []
-        self.keep_data = True
-        self.do_translation = False
-        self.translation_map = {}
-        self.build_translation_map()
-        self.initial_indent = 0
-        self.subsequent_indent = 0
-
-    def build_translation_map(self):
-        pass
-
-    def indent(self):
-        self.initial_indent += 1
-
-    def dedent(self):
-        self.initial_indent -= 1
-
-    def translate_words(self, words):
-        return [self.translation_map.get(w, w) for w in words]
-
-    def add_paragraph(self):
-        self.paragraphs.append(Paragraph(self, self.width,
-                                         self.initial_indent))
-        return self.paragraphs[-1]
-
-    def get_current_paragraph(self):
-        if len(self.paragraphs) == 0:
-            self.add_paragraph(self)
-        return self.paragraphs[-1]
-
-    def do_title(self, title):
-        self.add_paragraph().write(self.style.h1(title))
-        self.add_paragraph()
-
-    def do_description(self, description):
-        msg = self.session.get_data('messages/Description')
-        self.add_paragraph().write(self.style.h2(msg))
-        if description:
-            self.add_paragraph()
-            self.help_parser.feed(description)
-
-    def handle_data(self, data):
-        if data and self.keep_data:
-            paragraph = self.get_current_paragraph()
-            if paragraph.current_char is None and data.isspace():
-                pass
-            else:
-                paragraph.write(data.encode('utf-8'))
-
-    def render(self, fp):
-        for paragraph in self.paragraphs:
-            fp.write(paragraph.wrap())
-
-    def build(self, object):
-        pass
 
 
 class OperationDocument(Document):
@@ -303,8 +146,7 @@ class OperationDocument(Document):
         if operation.params:
             required = [p for p in operation.params if p.required]
             optional = [p for p in operation.params if not p.required]
-        msg = self.session.get_data('messages/Synopsis')
-        self.add_paragraph().write(self.style.h2(msg))
+        self.add_paragraph().write(self.style.h2('SYNOPSIS'))
         provider_name = self.session.get_variable('provider')
         self.add_paragraph().write('::')
         self.indent()
@@ -332,24 +174,20 @@ class OperationDocument(Document):
             para.write('output_file')
         self.dedent()
         self.dedent()
-        msg = self.session.get_data('messages/RequiredParameters')
-        self.add_paragraph().write(self.style.h2(msg))
-        none_msg = self.session.get_data('messages/None')
+        self.add_paragraph().write(self.style.h2('REQUIRED PARAMETERS'))
         for param in required:
             self.do_parameter(param)
             self.do_example(param)
         if not required:
-            self.add_paragraph().write(none_msg)
-        msg = self.session.get_data('messages/OptionalParameters')
-        self.add_paragraph().write(self.style.h2(msg))
+            self.add_paragraph().write('None')
+        self.add_paragraph().write(self.style.h2('OPTIONAL PARAMETERS'))
         for param in optional:
             self.do_parameter(param)
             self.do_example(param)
         if not optional:
-            self.add_paragraph().write(none_msg)
+            self.add_paragraph().write('None')
         if operation.is_streaming():
-            msg = self.session.get_data('messages/PositionalArguments')
-            self.add_paragraph().write(self.style.h2(msg))
+            self.add_paragraph().write(self.style.h2('POSITIONAL ARGUMENTS'))
             para = self.add_paragraph()
             para.write(self.style.code('output_file'))
             para.write(' (blob)')
@@ -500,9 +338,6 @@ class ProviderDocument(Document):
                     self.dedent()
                 if 'choices' in option_data:
                     choices = option_data['choices']
-                    if not isinstance(choices, list):
-                        choices_path = choices.format(provider=provider_name)
-                        choices = self.session.get_data(choices_path)
                     self.indent()
                     for choice in sorted(choices):
                         self.style.start_li()
@@ -510,30 +345,29 @@ class ProviderDocument(Document):
                         self.style.end_li()
                     self.dedent()
 
-    def build(self, provider_name, do_man=False):
-        cli = self.session.get_data('cli')
+    def build(self, provider_name, cli_data, do_man=False):
         self.do_title(provider_name)
-        self.do_description(cli['description'])
-        self.do_synopsis(cli['synopsis'])
+        self.do_description(cli_data['description'])
+        self.do_synopsis(cli_data['synopsis'])
         self.add_paragraph()
-        self.help_parser.feed(cli['help_usage'])
+        self.help_parser.feed(cli_data['help_usage'])
         self.add_paragraph()
-        self.do_options(cli['options'], provider_name)
+        self.do_options(cli_data['options'], provider_name)
         if do_man:
             self.do_man_toc(provider_name)
         else:
             self.do_toc(provider_name)
 
 
-def gen_rst(session, provider=None, service=None,
-            operation=None, fp=None, do_man=False):
+def gen_man(session, provider=None, service=None,
+            operation=None, fp=None, cli_data=None, do_man=False):
     """
     """
     if fp is None:
         fp = sys.stdout
     if provider:
         doc = ProviderDocument(session)
-        doc.build(provider, do_man)
+        doc.build(provider, cli_data, do_man)
         doc.render(fp)
     if operation:
         doc = OperationDocument(session, operation)
