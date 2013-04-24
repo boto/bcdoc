@@ -22,6 +22,26 @@ class OperationDocument(Document):
         self.operation = operation
         Document.__init__(self, session)
 
+    def do_filters(self, operation):
+        if hasattr(operation, 'filters'):
+            self.add_paragraph().write(self.style.h2('FILTERS'))
+            self.add_paragraph()
+            sorted_names = sorted(operation.filters)
+            for filter_name in sorted_names:
+                filter_data = operation.filters[filter_name]
+                self.add_paragraph().write(self.style.code(filter_name))
+                self.indent()
+                self.add_paragraph()
+                if 'documentation' in filter_data:
+                    self.help_parser.feed(filter_data['documentation'])
+                if 'choices' in filter_data:
+                    para = self.add_paragraph()
+                    para.write('Valid Values: ')
+                    choices = '|'.join(filter_data['choices'])
+                    para.write(self.style.code(choices))
+                self.dedent()
+
+
     def example_value_name(self, param):
         if param.type == 'string':
             if hasattr(param, 'enum'):
@@ -227,6 +247,7 @@ class OperationDocument(Document):
         self.do_title(self.operation.cli_name)
         self.do_description(self.operation.documentation)
         self.do_parameters(self.operation)
+        self.do_filters(self.operation)
 
 
 class ServiceDocument(Document):
