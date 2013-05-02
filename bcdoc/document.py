@@ -69,7 +69,7 @@ class Document(object):
             if paragraph.current_char is None and data.isspace():
                 pass
             else:
-                paragraph.write(data.encode('utf-8'))
+                paragraph.write(data)
 
     def render(self, fp):
         for paragraph in self.paragraphs:
