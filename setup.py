@@ -30,7 +30,6 @@ setup(
     url='https://github.com/botocore/bcdoc',
     packages=packages,
     package_dir={'bcdoc': 'bcdoc'},
-    scripts=['bin/rstgen', 'bin/rstgen.cmd'],
     install_requires=requires,
     license=open("LICENSE.txt").read(),
     classifiers=(
