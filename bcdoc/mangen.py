@@ -41,7 +41,6 @@ class OperationDocument(Document):
                     para.write(self.style.code(choices))
                 self.dedent()
 
-
     def example_value_name(self, param):
         if param.type == 'string':
             if hasattr(param, 'enum'):
@@ -381,7 +380,7 @@ class ProviderDocument(Document):
 
 
 def gen_man(session, provider=None, service=None,
-            operation=None, fp=None, cli_data=None, do_man=False):
+            operation=None, fp=None, cli_data=None, do_man=True):
     """
     """
     if fp is None:
