@@ -1,54 +1,18 @@
 #!/usr/bin/env python
-import os
+# Copyright 2012 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+
+#     http://aws.amazon.com/apache2.0/
+
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
 import sys
-import argparse
-from awscli.clidriver import CLIDriver
-from bcdoc.mangen import gen_man
-
-
-def do_operation(session, args):
-    service = session.get_service(args.service)
-    operation = service.get_operation(args.operation)
-    gen_man(session, operation=operation)
-
-
-def do_service(session, args):
-    service = session.get_service(args.service)
-    gen_man(session, service=service)
-
-
-def do_provider(session, args):
-    cli_data = get_cli_data(session, provider_name=args.provider)
-    gen_man(session, provider=args.provider, cli_data=cli_data)
-
-
-def get_cli_data(session, provider_name):
-    cli_data = session.get_data('cli')
-    for option in cli_data['options']:
-        if option.startswith('--'):
-            option_data = cli_data['options'][option]
-            if 'choices' in option_data:
-                choices = option_data['choices']
-                if not isinstance(choices, list):
-                    choices_path = choices.format(provider=provider_name)
-                    choices = session.get_data(choices_path)
-                    option_data['choices'] = choices
-    return cli_data
-
+import bcdoc.rstgen
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--provider',
-                        help='Name of provider', required=True)
-    parser.add_argument('--service',
-                        help='Name of service')
-    parser.add_argument('--operation',
-                        help='Name of operation')
-    args = parser.parse_args()
-    driver = CLIDriver()
-    if args.provider and args.service and args.operation:
-        do_operation(driver.session, args)
-    elif args.provider and args.service:
-        do_service(driver.session, args)
-    else:
-        do_provider(driver.session, args)
+    sys.exit(bcdoc.rstgen.main())
