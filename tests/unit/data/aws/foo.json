@@ -1,0 +1,30 @@
+{
+    "service_full_name": "The Foo Service",
+    "service_abbreviation": "Foo",
+    "type": "query",
+    "endpoint_prefix": "foo",
+    "documentation": "<p>The Foo Service is a web service that enables foo.</p><p>It should not be confused with the Fie Service.</p>",
+    "operations": {
+	"Bar": {
+	    "name": "Bar",
+	    "input": {
+		"shape_name": "BarRequest",
+		"type": "structure",
+		"members": {
+		    "ParamOne": {
+			"shape_name": "paramOneType",
+			"type": "string",
+			"documentation": "<p>The first parameter.</p>",
+			"required": true
+		    },
+		    "ParamTwo": {
+			"shape_name": "paramTwoType",
+			"type": "integer",
+			"documentation": "<p>The second parameter.</p>"
+		    }
+		},
+		"documentation": "<p>Calculates the <b>Bar</b>."
+	    }
+	}
+    }
+}
