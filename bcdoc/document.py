@@ -11,6 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import six
 from .paragraph import Paragraph
 from .style import ReSTStyle
 from .htmlparser import HelpParser
@@ -69,11 +70,20 @@ class Document(object):
             if paragraph.current_char is None and data.isspace():
                 pass
             else:
-                paragraph.write(data)
+                # Some of the JSON service descriptions have
+                # Unicode constants embedded in the doc strings
+                # which cause UnicodeEncodeErrors in Python 2.x
+                try:
+                    paragraph.write(data)
+                except UnicodeEncodeError:
+                    paragraph.write(data.encode('utf-8'))
 
     def render(self, fp):
         for paragraph in self.paragraphs:
-            fp.write(paragraph.wrap())
+            try:
+                fp.write(paragraph.wrap())
+            except UnicodeEncodeError:
+                fp.write(paragraph.wrap().encode('utf-8'))
 
     def build(self, object):
         pass
