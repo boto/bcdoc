@@ -44,7 +44,7 @@ class OperationDocument(Document):
     def example_value_name(self, param):
         if param.type == 'string':
             if hasattr(param, 'enum'):
-                choices = [e.decode('utf-8') for e in param.enum]
+                choices = param.enum
                 return '|'.join(['"%s"' % c for c in choices])
             else:
                 return '"string"'
