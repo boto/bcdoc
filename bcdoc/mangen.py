@@ -124,6 +124,10 @@ class OperationDocument(Document):
             self.dedent()
             self.dedent()
             self.add_paragraph()
+            self.session.emit('add-syntax-example.%s.%s.%s' %
+                              (param.operation.service.endpoint_prefix,
+                               param.operation.name, param.name),
+                              operation_doc=self, param=param)
 
     def build_translation_map(self):
         for param in self.operation.params:
