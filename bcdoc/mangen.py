@@ -114,9 +114,13 @@ class OperationDocument(Document):
 
     def do_example(self, param):
         if param.type in ('list', 'structure', 'map'):
+            self.session.emit('add-syntax-example.%s.%s.%s' %
+                              (param.operation.service.endpoint_prefix,
+                               param.operation.name, param.name),
+                              operation_doc=self, param=param)
             self.indent()
             para = self.add_paragraph()
-            para.write(self.style.italics('Parameter Syntax'))
+            para.write(self.style.italics('JSON Parameter Syntax'))
             para.write('::')
             self.indent()
             self.add_paragraph()
