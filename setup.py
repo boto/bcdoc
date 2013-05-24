@@ -23,7 +23,7 @@ requires = ['six>=1.1.0',
 
 setup(
     name='bcdoc',
-    version='0.4.1',
+    version='0.4.2',
     description='ReST document generation tools for botocore.',
     long_description=open('README.md').read(),
     author='Mitch Garnaat',
