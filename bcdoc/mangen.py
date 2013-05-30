@@ -53,6 +53,21 @@ class OperationDocument(Document):
         else:
             return '%s' % param.type
 
+    def _uses_space_list(self, param):
+        # Should be documented with list of spaces if this is a list-scalar
+        # param.
+        return param.type == 'list' and param.members.type in ScalarTypes
+
+    def _do_space_list_example(self, param):
+        para = self.add_paragraph()
+        para.write("Space separated values:")
+        self.add_paragraph()
+        para2 = self.add_paragraph()
+        para2.write(self.example_value_name(param.members))
+        para2.write(' ')
+        para2.write(self.example_value_name(param.members))
+        self.add_paragraph()
+
     def _do_example(self, param):
         para = self.add_paragraph()
         if param.type == 'list':
@@ -120,11 +135,18 @@ class OperationDocument(Document):
                               operation_doc=self, param=param)
             self.indent()
             para = self.add_paragraph()
-            para.write(self.style.italics('JSON Parameter Syntax'))
+            uses_space_list = self._uses_space_list(param)
+            if uses_space_list:
+                para.write(self.style.italics('Parameter Syntax'))
+            else:
+                para.write(self.style.italics('JSON Parameter Syntax'))
             para.write('::')
             self.indent()
             self.add_paragraph()
-            self._do_example(param)
+            if uses_space_list:
+                self._do_space_list_example(param)
+            else:
+                self._do_example(param)
             self.dedent()
             self.dedent()
             self.add_paragraph()
