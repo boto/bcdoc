@@ -21,13 +21,14 @@ LOG = logging.getLogger(__name__)
 
 class CLIDocumentHandler(object):
 
-    def __init__(self, fp=None, style=None):
+    def __init__(self, fp=None, style=None, target='html'):
         if fp is None:
             fp = cStringIO()
         self.fp = fp
         if style is None:
             style = ReSTStyle(self)
         self.style = style
+        self.target = target
         self.parser = DocStringParser(self)
         self.keep_data = True
         self.do_translation = False
@@ -59,7 +60,7 @@ class CLIDocumentHandler(object):
 class ProviderDocumentHandler(CLIDocumentHandler):
 
     def __init__(self, fp=None, style=None):
-        ReSTDocumentHandler.__init__(self, fp, style)
+        CLIDocumentHandler.__init__(self, fp, style)
         self._cli_data = None
 
     def initialize(self, session):
@@ -120,9 +121,16 @@ class ProviderDocumentHandler(CLIDocumentHandler):
 
     def subitems(self, event_name, provider, **kwargs):
         self.style.h2('Available Services')
+        if self.target == 'html':
+            self.fp.write('\n.. toctree::\n')
+            self.fp.write('  :maxdepth: 1\n')
+            self.fp.write('  :titlesonly:\n\n')
 
     def subitem(self, event_name, provider, service, **kwargs):
-        self.fp.write('* %s\n' % service.service_full_name)
+        if self.target == 'man':
+            self.fp.write('* %s\n' % service.service_full_name)
+        else:
+            self.fp.write('  %s/index\n' % service.endpoint_prefix)
 
 
 class ServiceDocumentHandler(CLIDocumentHandler):
@@ -146,9 +154,16 @@ class ServiceDocumentHandler(CLIDocumentHandler):
 
     def subitems(self, event_name, service, **kwargs):
         self.style.h2('Available Commands')
+        if self.target == 'html':
+            self.fp.write('\n.. toctree::\n')
+            self.fp.write('  :maxdepth: 1\n')
+            self.fp.write('  :titlesonly:\n\n')
 
     def subitem(self, event_name, service, operation, **kwargs):
-        self.fp.write('* %s\n' % operation.cli_name)
+        if self.target == 'man':
+            self.fp.write('* %s\n' % operation.cli_name)
+        else:
+            self.fp.write('  %s\n' % operation.cli_name)
 
 
 class OperationDocumentHandler(CLIDocumentHandler):
