@@ -170,7 +170,7 @@ class OperationDocument(Document):
             required = [p for p in operation.params if p.required]
             optional = [p for p in operation.params if not p.required]
         self.add_paragraph().write(self.style.h2('SYNOPSIS'))
-        provider_name = self.session.get_variable('provider')
+        provider_name = self.session.provider.name
         self.add_paragraph().write('::')
         self.indent()
         self.add_paragraph()
@@ -322,23 +322,23 @@ class ProviderDocument(Document):
         self.dedent()
         self.add_paragraph()
 
-    def do_toc(self, provider_name):
+    def do_toc(self):
         self.add_paragraph().write(self.style.h2('Available Services'))
         self.add_paragraph().write('.. toctree::')
         self.indent()
         self.add_paragraph().write(':maxdepth: 1')
         self.add_paragraph().write(':titlesonly:')
         self.add_paragraph()
-        service_names = self.session.get_available_services(provider_name)
+        service_names = self.session.get_available_services()
         service_names = sorted(service_names)
         for service_name in service_names:
             self.add_paragraph().write(service_name+'/index')
         self.dedent()
 
-    def do_man_toc(self, provider_name):
+    def do_man_toc(self):
         self.add_paragraph().write(self.style.h2('Available Services'))
         self.add_paragraph()
-        service_names = self.session.get_available_services(provider_name)
+        service_names = self.session.get_available_services()
         service_names = sorted(service_names)
         self.style.start_ul()
         for service_name in service_names:
@@ -346,7 +346,7 @@ class ProviderDocument(Document):
             self.get_current_paragraph().write(service_name)
             self.style.end_li()
 
-    def do_options(self, options, provider_name):
+    def do_options(self, options):
         self.add_paragraph().write(self.style.h2('OPTIONS'))
         for option in options:
             if option.startswith('--'):
@@ -369,29 +369,29 @@ class ProviderDocument(Document):
                         self.style.end_li()
                     self.dedent()
 
-    def build(self, provider_name, cli_data, do_man=False):
-        self.do_title(provider_name)
+    def build(self, session, cli_data, do_man=False):
+        self.do_title(session)
         self.do_description(cli_data['description'])
         self.do_synopsis(cli_data['synopsis'])
         self.add_paragraph()
         self.help_parser.feed(cli_data['help_usage'])
         self.add_paragraph()
-        self.do_options(cli_data['options'], provider_name)
+        self.do_options(cli_data['options'], session)
         if do_man:
-            self.do_man_toc(provider_name)
+            self.do_man_toc(session)
         else:
-            self.do_toc(provider_name)
+            self.do_toc(session)
 
 
-def gen_man(session, provider=None, service=None,
-            operation=None, fp=None, cli_data=None, do_man=True):
+def gen_man(session, service=None, operation=None, fp=None,
+            cli_data=None, do_man=True):
     """
     """
     if fp is None:
         fp = sys.stdout
     if provider:
         doc = ProviderDocument(session)
-        doc.build(provider, cli_data, do_man)
+        doc.build(session, cli_data, do_man)
         doc.render(fp)
     if operation:
         doc = OperationDocument(session, operation)
