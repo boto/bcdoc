@@ -21,7 +21,7 @@ LOG = logging.getLogger(__name__)
 
 class CLIDocumentHandler(object):
 
-    def __init__(self, fp=None, style=None, target='html'):
+    def __init__(self, fp=None, style=None, target='man'):
         if fp is None:
             fp = cStringIO()
         self.fp = fp
@@ -54,7 +54,6 @@ class CLIDocumentHandler(object):
     def include_doc_string(self, doc_string):
         if doc_string:
             self.parser.feed(doc_string)
-
 
 
 class ProviderDocumentHandler(CLIDocumentHandler):
@@ -95,9 +94,8 @@ class ProviderDocumentHandler(CLIDocumentHandler):
 
     def synopsis(self, event_name, provider, **kwargs):
         self.style.h2('Synopsis')
-        self.fp.write('::\n\n')
         cli_data = self.get_cli_data(provider.session)
-        self.fp.write('  %s\n\n' % cli_data['synopsis'])
+        self.style.codeblock(cli_data['synopsis'])
         self.include_doc_string(cli_data['help_usage'])
         self.style.new_paragraph()
 
@@ -110,21 +108,21 @@ class ProviderDocumentHandler(CLIDocumentHandler):
                 usage_str = option
                 if 'metavar' in option_data:
                     usage_str += ' <%s>' % option_data['metavar']
-                self.fp.write('``%s``\n' % usage_str)
+                self.style.code(usage_str)
                 if 'help' in option_data:
-                    self.fp.write('  %s\n' % option_data['help'])
+                    self.include_doc_string(option_data['help'])
+                self.style.new_paragraph()
                 if 'choices' in option_data:
+                    self.style.start_ul()
                     choices = option_data['choices']
                     for choice in sorted(choices):
-                        self.fp.write('    * %s\n' % choice)
+                        self.style.li(choice)
+                    self.style.end_ul()
         self.style.new_paragraph()
 
     def subitems(self, event_name, provider, **kwargs):
         self.style.h2('Available Services')
-        if self.target == 'html':
-            self.fp.write('\n.. toctree::\n')
-            self.fp.write('  :maxdepth: 1\n')
-            self.fp.write('  :titlesonly:\n\n')
+        self.style.toctree()
 
     def subitem(self, event_name, provider, service, **kwargs):
         if self.target == 'man':
@@ -154,10 +152,7 @@ class ServiceDocumentHandler(CLIDocumentHandler):
 
     def subitems(self, event_name, service, **kwargs):
         self.style.h2('Available Commands')
-        if self.target == 'html':
-            self.fp.write('\n.. toctree::\n')
-            self.fp.write('  :maxdepth: 1\n')
-            self.fp.write('  :titlesonly:\n\n')
+        self.style.toctree()
 
     def subitem(self, event_name, service, operation, **kwargs):
         if self.target == 'man':

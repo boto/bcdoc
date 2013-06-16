@@ -61,7 +61,7 @@ class ReSTStyle(BaseStyle):
 
     def new_paragraph(self):
         if self.do_p:
-            self.doc.fp.write('\n\n%s' % self.spaces())
+            self.doc.fp.write('\n\n')
 
     def start_bold(self, attrs=None):
         self.doc.fp.write('**')
@@ -189,6 +189,13 @@ class ReSTStyle(BaseStyle):
 
     def end_li(self):
         self.do_p = True
+        self.doc.fp.write('\n')
+
+    def li(self, s):
+        if s:
+            self.start_li()
+            self.doc.fp.write(s)
+            self.end_li()
 
     def start_ul(self, attrs=None):
         self.new_paragraph()
@@ -209,3 +216,29 @@ class ReSTStyle(BaseStyle):
 
     def end_fullname(self):
         self.doc.keep_data = True
+
+    def codeblock(self, code):
+        """
+        Literal code blocks are introduced by ending a paragraph with
+        the special marker ::.  The literal block must be indented
+        (and, like all paragraphs, separated from the surrounding
+        ones by blank lines).
+        """
+        self.doc.fp.write('::\n\n')
+        self.doc.fp.write('  ')
+        self.doc.fp.write(code)
+        self.doc.fp.write('\n\n')
+
+    def toctree(self):
+        if self.doc.target == 'html':
+            self.doc.fp.write('\n.. toctree::\n')
+            self.doc.fp.write('  :maxdepth: 1\n')
+            self.doc.fp.write('  :titlesonly:\n\n')
+        else:
+            self.start_ul()
+
+    def tocitem(self, html_name, man_name):
+        if self.doc.target == 'man':
+            self.doc.fp.write('* %s\n' % service.service_full_name)
+        else:
+            self.fp.write('  %s/index\n' % service.endpoint_prefix)
