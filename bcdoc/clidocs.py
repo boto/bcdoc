@@ -21,7 +21,8 @@ LOG = logging.getLogger(__name__)
 
 class CLIDocumentHandler(object):
 
-    def __init__(self, fp=None, style=None, target='man'):
+    def __init__(self, fp=None, style=None, target='man',
+                 extra_handlers=None):
         if fp is None:
             fp = cStringIO()
         self.fp = fp
@@ -35,6 +36,12 @@ class CLIDocumentHandler(object):
         self.translation_map = {}
         #self.build_translation_map()
 
+    def initialize(self, session):
+        pass
+
+    def write(self, s):
+        self.fp.write('%s%s' % (self.style.spaces(), s))
+
     def build_translation_map(self):
         pass
 
@@ -47,9 +54,9 @@ class CLIDocumentHandler(object):
             # Unicode constants embedded in the doc strings
             # which cause UnicodeEncodeErrors in Python 2.x
             try:
-                self.fp.write(data)
+                self.write(data)
             except UnicodeEncodeError:
-                self.fp.write(data.encode('utf-8'))
+                self.write(data.encode('utf-8'))
 
     def include_doc_string(self, doc_string):
         if doc_string:
@@ -63,80 +70,62 @@ class ProviderDocumentHandler(CLIDocumentHandler):
         self._cli_data = None
 
     def initialize(self, session):
+        CLIDocumentHandler.initialize(self, session)
         session.register('doc-title.Provider.*', self.title)
         session.register('doc-description.Provider.*', self.description)
-        session.register('doc-synopsis.Provider.*', self.synopsis)
-        session.register('doc-options.Provider.*', self.options)
-        session.register('doc-subitems.Provider.*', self.subitems)
+        session.register('doc-synopsis-start.Provider.*', self.synopsis)
+        session.register('doc-options-start.Provider.*', self.options)
+        session.register('doc-option.Provider.*.*', self.option)
+        session.register('doc-subitems-start.Provider.*', self.subitems)
         session.register('doc-subitem.Provider.*.*', self.subitem)
 
-    def get_cli_data(self, session):
-        if self._cli_data is None:
-            self._cli_data = session.get_data('cli')
-            for option in self._cli_data['options']:
-                if option.startswith('--'):
-                    option_data = self._cli_data['options'][option]
-                    if 'choices' in option_data:
-                        choices = option_data['choices']
-                        if not isinstance(choices, list):
-                            cp = choices.format(provider=session.provider.name)
-                            choices = session.get_data(cp)
-                            option_data['choices'] = choices
-        return self._cli_data
-
-    def title(self, event_name, provider, **kwargs):
+    def title(self, event_name, provider, help_command, **kwargs):
         self.style.h1(provider.name)
 
-    def description(self, event_name, provider, **kwargs):
+    def description(self, event_name, provider, help_command, **kwargs):
         self.style.h2('Description')
-        cli_data = self.get_cli_data(provider.session)
-        self.include_doc_string(cli_data['description'])
+        self.include_doc_string(help_command.description)
 
-    def synopsis(self, event_name, provider, **kwargs):
+    def synopsis(self, event_name, provider, help_command, **kwargs):
         self.style.h2('Synopsis')
-        cli_data = self.get_cli_data(provider.session)
-        self.style.codeblock(cli_data['synopsis'])
-        self.include_doc_string(cli_data['help_usage'])
+        self.style.codeblock(help_command.synopsis)
+        self.include_doc_string(help_command.help_usage)
         self.style.new_paragraph()
 
-    def options(self, event_name, provider, **kwargs):
+    def options(self, event_name, provider, help_command, **kwargs):
         self.style.h2('Options')
-        cli_data = self.get_cli_data(provider.session)
-        for option in cli_data['options']:
-            if option.startswith('--'):
-                option_data = cli_data['options'][option]
-                usage_str = option
-                if 'metavar' in option_data:
-                    usage_str += ' <%s>' % option_data['metavar']
-                self.style.code(usage_str)
-                if 'help' in option_data:
-                    self.include_doc_string(option_data['help'])
-                self.style.new_paragraph()
-                if 'choices' in option_data:
-                    self.style.start_ul()
-                    choices = option_data['choices']
-                    for choice in sorted(choices):
-                        self.style.li(choice)
-                    self.style.end_ul()
-        self.style.new_paragraph()
 
-    def subitems(self, event_name, provider, **kwargs):
+    def option(self, event_name, argument, **kwargs):
+        self.write('``%s`` (%s)\n' % (argument.cli_name,
+                                      argument.cli_type_name))
+        self.style.indent()
+        self.include_doc_string(argument.documentation)
+        self.style.dedent()
+        self.style.new_paragraph()
+        if argument.choices:
+            self.style.start_ul()
+            for choice in argument.choices:
+                self.style.li(choice)
+            self.style.end_ul()
+
+    def subitems(self, event_name, provider, help_command, **kwargs):
         self.style.h2('Available Services')
         self.style.toctree()
 
-    def subitem(self, event_name, provider, service, **kwargs):
+    def subitem(self, event_name, provider, service_name, **kwargs):
         if self.target == 'man':
-            self.fp.write('* %s\n' % service.service_full_name)
+            self.write('* %s\n' % service_name)
         else:
-            self.fp.write('  %s/index\n' % service.endpoint_prefix)
+            self.write('  %s/index\n' % service_name)
 
 
 class ServiceDocumentHandler(CLIDocumentHandler):
 
     def initialize(self, session):
+        CLIDocumentHandler.initialize(self, session)
         session.register('doc-title.Service.*', self.title)
         session.register('doc-description.Service.*', self.description)
-        session.register('doc-subitems.Service.*', self.subitems)
+        session.register('doc-subitems-start.Service.*', self.subitems)
         session.register('doc-subitem.Service.*.*', self.subitem)
 
     def build_translation_map(self):
@@ -154,24 +143,29 @@ class ServiceDocumentHandler(CLIDocumentHandler):
         self.style.h2('Available Commands')
         self.style.toctree()
 
-    def subitem(self, event_name, service, operation, **kwargs):
+    def subitem(self, event_name, service, operation_name, **kwargs):
         if self.target == 'man':
-            self.fp.write('* %s\n' % operation.cli_name)
+            self.write('* %s\n' % operation_name)
         else:
-            self.fp.write('  %s\n' % operation.cli_name)
+            self.write('  %s\n' % operation_name)
 
 
 class OperationDocumentHandler(CLIDocumentHandler):
 
     def initialize(self, session):
+        CLIDocumentHandler.initialize(self, session)
         session.register('doc-title.Operation.*', self.title)
         session.register('doc-description.Operation.*', self.description)
-        session.register('doc-synopsis.Operation.*', self.synopsis)
+        session.register('doc-synopsis-start.Operation.*',
+                         self.synopsis_start)
         session.register('doc-synopsis-option.Operation.*.*',
                          self.synopsis_option)
-        session.register('doc-options.Operation.*', self.options)
+        session.register('doc-synopsis-end.Operation.*',
+                         self.synopsis_end)
+        session.register('doc-options-start.Operation.*', self.options)
         session.register('doc-option.Operation.*.*', self.option)
-        #session.register('doc-examples.Operation.*', self.examples)
+        session.register('doc-option-example.Operation.*.*',
+                         self.example_shorthand)
 
     def build_translation_map(self):
         for param in self.operation.params:
@@ -186,27 +180,46 @@ class OperationDocumentHandler(CLIDocumentHandler):
         self.style.h2('Description')
         self.include_doc_string(operation.documentation)
 
-    def synopsis(self, event_name, operation, **kwargs):
+    def synopsis_start(self, event_name, operation, **kwargs):
         self.style.h2('Synopsis')
-        self.fp.write('::\n\n')
-        self.fp.write('  %s\n' % operation.cli_name)
+        self.write('::\n\n')
+        self.style.indent()
+        self.write('%s\n' % operation.cli_name)
 
-    def synopsis_option(self, event_name, operation, parameter, **kwargs):
-        option_str = parameter.cli_name
-        if parameter.type != 'boolean':
+    def synopsis_option(self, event_name, operation, argument, **kwargs):
+        option_str = argument.cli_name
+        if argument.cli_type != 'boolean':
             option_str += ' <value>'
-        if not parameter.required:
+        if not argument.required:
             option_str = '[%s]' % option_str
-        self.fp.write('    %s\n' % option_str)
+        self.write('%s\n' % option_str)
+
+    def synopsis_end(self, event_name, operation, **kwargs):
+        self.style.dedent()
 
     def options(self, event_name, operation, **kwargs):
         self.style.h2('Options')
         if len(operation.params) == 0:
-            self.fp.write('*None*\n')
+            self.write('*None*\n')
 
-    def option(self, event_name, operation, parameter, **kwargs):
-        self.fp.write('``%s`` (%s)\n' % (parameter.cli_name, parameter.type))
+    def option(self, event_name, operation, argument, **kwargs):
+        self.write('``%s`` (%s)\n' % (argument.cli_name,
+                                         argument.cli_type_name))
         self.style.indent()
-        self.include_doc_string(parameter.documentation)
+        self.include_doc_string(argument.documentation)
         self.style.dedent()
         self.style.new_paragraph()
+
+    def example_shorthand(self, event_name, operation, argument, **kwargs):
+        param = argument.argument_object
+        if param.example_fn:
+            self.style.new_paragraph()
+            self.write('Shorthand Syntax::')
+            self.style.new_paragraph()
+            self.style.indent()
+            self.write(param.example_fn(param))
+            self.style.dedent()
+            self.style.new_paragraph()
+
+
+        

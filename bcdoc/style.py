@@ -61,13 +61,13 @@ class ReSTStyle(BaseStyle):
 
     def new_paragraph(self):
         if self.do_p:
-            self.doc.fp.write('\n\n')
+            self.doc.write('\n\n')
 
     def start_bold(self, attrs=None):
-        self.doc.fp.write('**')
+        self.doc.write('**')
 
     def end_bold(self):
-        self.doc.fp.write('** ')
+        self.doc.write('** ')
 
     def start_b(self, attrs=None):
         self.doc.do_translation = True
@@ -75,23 +75,23 @@ class ReSTStyle(BaseStyle):
 
     def end_b(self):
         self.doc.do_translation = False
-        self.doc.fp.write('** ')
+        self.doc.write('** ')
 
     def bold(self, s):
         if s:
             self.start_bold()
-            self.doc.fp.write(s)
+            self.doc.write(s)
             self.end_bold()
 
     def ref(self, title, link=None):
         if link is None:
             link = title
-        self.doc.fp.write(':doc:`%s <%s>`' % (title, link))
+        self.doc.write(':doc:`%s <%s>`' % (title, link))
 
     def _heading(self, s, border_char):
         border = border_char * len(s)
         self.new_paragraph()
-        self.doc.fp.write('%s\n%s\n%s' % (border, s, border))
+        self.doc.write('%s\n%s\n%s' % (border, s, border))
         self.new_paragraph()
 
     def h1(self, s):
@@ -104,42 +104,42 @@ class ReSTStyle(BaseStyle):
         self._heading(s, '-')
 
     def start_italics(self, attrs=None):
-        self.doc.fp.write('*')
+        self.doc.write('*')
 
     def end_italics(self):
-        self.doc.fp.write('* ')
+        self.doc.write('* ')
 
     def italics(self, s):
         if s:
             self.start_italics()
-            self.doc.fp.write(s)
+            self.doc.write(s)
             self.end_italics()
 
     def start_p(self, attrs=None):
         if self.do_p:
-            self.doc.fp.write('\n\n')
+            self.doc.write('\n\n')
 
     def end_p(self):
         if self.do_p:
-            self.doc.fp.write('\n\n')
+            self.doc.write('\n\n')
 
     def start_code(self, attrs=None):
         self.doc.do_translation = True
-        self.doc.fp.write('``')
+        self.doc.write('``')
 
     def end_code(self):
         self.doc.do_translation = False
-        self.doc.fp.write('`` ')
+        self.doc.write('`` ')
 
     def code(self, s):
         if s:
             self.start_code()
-            self.doc.fp.write(s)
+            self.doc.write(s)
             self.end_code()
 
     def start_note(self, attrs=None):
         self.new_paragraph()
-        self.doc.fp.write('.. note::')
+        self.doc.write('.. note::')
         self.indent()
         self.new_paragraph()
 
@@ -149,7 +149,7 @@ class ReSTStyle(BaseStyle):
 
     def start_important(self, attrs=None):
         self.new_paragraph()
-        self.doc.fp.write('.. warning::')
+        self.doc.write('.. warning::')
         self.indent()
         self.new_paragraph()
 
@@ -162,18 +162,18 @@ class ReSTStyle(BaseStyle):
             for attr_key, attr_value in attrs:
                 if attr_key == 'href':
                     self.a_href = attr_value
-                    self.doc.fp.write('`')
+                    self.doc.write('`')
         else:
-            self.doc.fp.write(' ')
+            self.doc.write(' ')
         self.doc.do_translation = True
 
     def end_a(self):
         self.doc.do_translation = False
         if self.a_href:
-            self.doc.fp.write(' <%s>' % self.a_href)
+            self.doc.write(' <%s>' % self.a_href)
             self.a_href = None
-            self.doc.fp.write('`_')
-        self.doc.fp.write(' ')
+            self.doc.write('`_')
+        self.doc.write(' ')
 
     def start_i(self, attrs=None):
         self.doc.do_translation = True
@@ -185,16 +185,16 @@ class ReSTStyle(BaseStyle):
 
     def start_li(self, attrs=None):
         self.do_p = False
-        self.doc.fp.write('* ')
+        self.doc.write('* ')
 
     def end_li(self):
         self.do_p = True
-        self.doc.fp.write('\n')
+        self.doc.write('\n')
 
     def li(self, s):
         if s:
             self.start_li()
-            self.doc.fp.write(s)
+            self.doc.write(s)
             self.end_li()
 
     def start_ul(self, attrs=None):
@@ -224,21 +224,21 @@ class ReSTStyle(BaseStyle):
         (and, like all paragraphs, separated from the surrounding
         ones by blank lines).
         """
-        self.doc.fp.write('::\n\n')
-        self.doc.fp.write('  ')
-        self.doc.fp.write(code)
-        self.doc.fp.write('\n\n')
+        self.doc.write('::\n\n')
+        self.doc.write('  ')
+        self.doc.write(code)
+        self.doc.write('\n\n')
 
     def toctree(self):
         if self.doc.target == 'html':
-            self.doc.fp.write('\n.. toctree::\n')
-            self.doc.fp.write('  :maxdepth: 1\n')
-            self.doc.fp.write('  :titlesonly:\n\n')
+            self.doc.write('\n.. toctree::\n')
+            self.doc.write('  :maxdepth: 1\n')
+            self.doc.write('  :titlesonly:\n\n')
         else:
             self.start_ul()
 
     def tocitem(self, html_name, man_name):
         if self.doc.target == 'man':
-            self.doc.fp.write('* %s\n' % service.service_full_name)
+            self.doc.write('* %s\n' % service.service_full_name)
         else:
             self.fp.write('  %s/index\n' % service.endpoint_prefix)
