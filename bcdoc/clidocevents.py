@@ -55,9 +55,11 @@ class CLIDocEvents(object):
         for arg_name in help_command.arg_table:
             arg = help_command.arg_table[arg_name]
             self.fire_event('doc-option', 'Provider', provider.name,
-                            arg_name, argument=arg)
+                            arg_name, argument=arg,
+                            help_command=help_command)
             self.fire_event('doc-option-example', 'Provider',
-                            provider.name, arg_name, argument=arg)
+                            provider.name, arg_name, argument=arg,
+                            help_command=help_command)
         self.fire_event('doc-options-end', 'Provider', provider.name,
                         provider=provider, help_command=help_command)
         self.fire_event('doc-subitems-start', 'Provider', provider.name,
@@ -65,68 +67,74 @@ class CLIDocEvents(object):
         for service_name in help_command.command_table.keys():
             self.fire_event('doc-subitem', 'Provider',
                             provider.name, service_name,
-                            provider=provider, service_name=service_name)
+                            provider=provider, service_name=service_name,
+                            help_command=help_command)
         self.fire_event('doc-subitems-end', 'Provider', provider.name,
                         provider=provider, help_command=help_command)
 
     def document_service(self, service, help_command):
         service = help_command.service
         self.fire_event('doc-title', 'Service', service.endpoint_prefix,
-                        service=service)
+                        service=service, help_command=help_command)
         self.fire_event('doc-description', 'Service', service.endpoint_prefix,
-                        service=service)
+                        service=service, help_command=help_command)
         self.fire_event('doc-synopsis-start', 'Service',
                         service.endpoint_prefix,
-                        service=service)
+                        service=service, help_command=help_command)
         self.fire_event('doc-synopsis-end', 'Service',
                         service.endpoint_prefix,
-                        service=service)
+                        service=service, help_command=help_command)
         self.fire_event('doc-options-start', 'Service',
                         service.endpoint_prefix,
-                        service=service)
+                        service=service, help_command=help_command)
         self.fire_event('doc-options-end', 'Service',
                         service.endpoint_prefix,
-                        service=service)
+                        service=service, help_command=help_command)
         self.fire_event('doc-subitems-start', 'Service',
                         service.endpoint_prefix,
-                        service=service)
+                        service=service, help_command=help_command)
         for operation_name in help_command.command_table.keys():
             self.fire_event('doc-subitem', 'Service',
                             service.endpoint_prefix, operation_name,
-                            service=service, operation_name=operation_name)
+                            service=service, operation_name=operation_name,
+                            help_command=help_command)
         self.fire_event('doc-subitems-end', 'Service',
                         service.endpoint_prefix,
-                        service=service)
+                        service=service, help_command=help_command)
 
     def document_operation(self, operation, help_command):
         self.fire_event('doc-title', 'Operation', operation.name,
-                        operation=operation)
+                        operation=operation, help_command=help_command)
         self.fire_event('doc-description', 'Operation', operation.name,
-                        operation=operation)
+                        operation=operation, help_command=help_command)
         self.fire_event('doc-synopsis-start', 'Operation', operation.name,
-                        operation=operation)
+                        operation=operation, help_command=help_command)
         for arg_name in help_command.arg_table:
             arg = help_command.arg_table[arg_name]
             self.fire_event('doc-synopsis-option', 'Operation',
                             operation.name, arg_name,
-                            operation=operation, argument=arg)
+                            operation=operation, argument=arg,
+                            help_command=help_command)
         self.fire_event('doc-synopsis-end', 'Operation', operation.name,
-                        operation=operation)
+                        operation=operation, help_command=help_command)
         self.fire_event('doc-options-start', 'Operation', operation.name,
-                        operation=operation)
+                        operation=operation, help_command=help_command)
         for arg_name in help_command.arg_table:
             arg = help_command.arg_table[arg_name]
             self.fire_event('doc-option', 'Operation',
                             operation.name, arg_name,
-                            operation=operation, argument=arg)
+                            operation=operation, argument=arg,
+                            help_command=help_command)
             self.fire_event('doc-option-example',  'Operation',
                             operation.name, arg_name,
                             operation=operation, argument=arg,
-                            param_shorthand=help_command.param_shorthand)
+                            param_shorthand=help_command.param_shorthand,
+                            help_command=help_command)
         self.fire_event('doc-options-end', 'Operation', operation.name,
-                        operation=operation)
+                        operation=operation, help_command=help_command)
         self.fire_event('doc-examples', 'Operation',
-                        operation.name, operation=operation)
+                        operation.name, operation=operation,
+                        help_command=help_command)
 
     def register_events(self):
         for event_name in self.DocEvents:
@@ -134,12 +142,12 @@ class CLIDocEvents(object):
                                         self.DocEvents[event_name])
 
 
-def document(session, obj, **kwargs):
+def document(session, obj, help_command, **kwargs):
     doc_events = CLIDocEvents(session)
     doc_events.register_events()
     if isinstance(obj, Provider):
-        doc_events.document_provider(obj, **kwargs)
+        doc_events.document_provider(obj, help_command, **kwargs)
     elif isinstance(obj, Service):
-        doc_events.document_service(obj, **kwargs)
+        doc_events.document_service(obj, help_command, **kwargs)
     elif isinstance(obj, Operation):
-        doc_events.document_operation(obj, **kwargs)
+        doc_events.document_operation(obj, help_command, **kwargs)

@@ -21,7 +21,7 @@ class BaseStyle(object):
         self.keep_data = True
 
     def new_paragraph(self):
-        return '\n'
+        return '\n%s' % self.spaces()
 
     def indent(self):
         self._indent += 1
@@ -61,7 +61,7 @@ class ReSTStyle(BaseStyle):
 
     def new_paragraph(self):
         if self.do_p:
-            self.doc.write('\n\n')
+            self.doc.write('\n\n%s' % self.spaces())
 
     def start_bold(self, attrs=None):
         self.doc.write('**')
@@ -117,7 +117,7 @@ class ReSTStyle(BaseStyle):
 
     def start_p(self, attrs=None):
         if self.do_p:
-            self.doc.write('\n\n')
+            self.doc.write('\n\n%s' % self.spaces())
 
     def end_p(self):
         if self.do_p:
