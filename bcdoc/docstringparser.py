@@ -13,11 +13,11 @@
 from six.moves import html_parser
 
 
-class HelpParser(html_parser.HTMLParser):
+class DocStringParser(html_parser.HTMLParser):
     """
-    A simple HTML parser.  Really focused only on
-    the subset of HTML that shows up in the documentation strings
-    found in the models.
+    A simple HTML parser.  Focused on converting the subset of HTML
+    that appears in the documentation strings of the JSON models into
+    simple ReST format.
     """
 
     def __init__(self, doc):
@@ -28,39 +28,14 @@ class HelpParser(html_parser.HTMLParser):
     def handle_starttag(self, tag, attrs):
         handler_name = 'start_%s' % tag
         if hasattr(self.doc.style, handler_name):
-            s = getattr(self.doc.style, handler_name)(attrs)
-            if s:
-                self.doc.get_current_paragraph().write(s)
+            getattr(self.doc.style, handler_name)(attrs)
         else:
             self.unhandled_tags.append(tag)
 
     def handle_endtag(self, tag):
         handler_name = 'end_%s' % tag
         if hasattr(self.doc.style, handler_name):
-            s = getattr(self.doc.style, handler_name)()
-            if s:
-                self.doc.get_current_paragraph().write(s)
-        else:
-            self.doc.get_current_paragraph().write(' ')
-
-    def handle_data(self, data):
-        data = data.replace('\n', '')
-        if not data:
-            return
-        if data.isspace():
-            data = ' '
-        words = data.split()
-        words = self.doc.translate_words(words)
-        data = ' '.join(words)
-        begin_space = data[0].isspace()
-        end_space = data[-1].isspace()
-        if begin_space:
-            if len(data) > 0 and not data[0].isupper():
-                data = ' ' + data
-        if end_space:
-            if len(data) > 0 and data[-1] != '.':
-                data = data + ' '
-        self.doc.handle_data(data)
+            getattr(self.doc.style, handler_name)()
 
     def handle_data(self, data):
         if data.isspace():
