@@ -217,6 +217,15 @@ class ReSTStyle(BaseStyle):
     def end_fullname(self):
         self.doc.keep_data = True
 
+    def start_codeblock(self, attrs=None):
+        self.doc.write('::')
+        self.indent()
+        self.new_paragraph()
+
+    def end_codeblock(self):
+        self.dedent()
+        self.new_paragraph()
+
     def codeblock(self, code):
         """
         Literal code blocks are introduced by ending a paragraph with
@@ -224,10 +233,9 @@ class ReSTStyle(BaseStyle):
         (and, like all paragraphs, separated from the surrounding
         ones by blank lines).
         """
-        self.doc.write('::\n\n')
-        self.doc.write('  ')
-        self.doc.write(code)
-        self.doc.write('\n\n')
+        self.start_codeblock()
+        self.doc.writeln(code)
+        self.end_codeblock()
 
     def toctree(self):
         if self.doc.target == 'html':
