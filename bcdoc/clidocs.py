@@ -32,16 +32,12 @@ class ReSTDocument(object):
         self.keep_data = True
         self.do_translation = False
         self.translation_map = {}
-        #self.build_translation_map()
 
     def write(self, s):
         self.fp.write(s)
 
     def writeln(self, s):
         self.fp.write('%s%s\n' % (self.style.spaces(), s))
-
-    def build_translation_map(self):
-        pass
 
     def translate_words(self, words):
         return [self.translation_map.get(w, w) for w in words]
@@ -66,6 +62,10 @@ class CLIDocumentEventHandler(object):
     def __init__(self, help_command):
         self.help_command = help_command
         self.initialize(help_command.session, help_command.event_class)
+        self.help_command.doc.translation_map = self.build_translation_map()
+
+    def build_translation_map(self):
+        return dict()
 
     def initialize(self, session, event_class):
         """
@@ -135,17 +135,16 @@ class ProviderDocumentEventHandler(CLIDocumentEventHandler):
 
     def doc_subitem(self, command_name, help_command, **kwargs):
         doc = help_command.doc
-        if doc.target == 'man':
-            doc.write('* %s\n' % command_name)
-        else:
-            doc.write('  %s/index\n' % command_name)
+        doc.style.tocitem(command_name)
 
 
 class ServiceDocumentEventHandler(CLIDocumentEventHandler):
 
     def build_translation_map(self):
-        for op in self.service.operations:
-            self.translation_map[op.name] = op.cli_name
+        d = {}
+        for op in self.help_command.obj.operations:
+            d[op.name] = op.cli_name
+        return d
 
     def doc_title(self, help_command, **kwargs):
         doc = help_command.doc
@@ -157,26 +156,27 @@ class ServiceDocumentEventHandler(CLIDocumentEventHandler):
         doc.style.h2('Description')
         doc.include_doc_string(service.documentation)
 
-    def doc_subitems(self, help_command, **kwargs):
+    def doc_subitems_start(self, help_command, **kwargs):
         doc = help_command.doc
         doc.style.h2('Available Commands')
         doc.style.toctree()
 
     def doc_subitem(self, command_name, help_command, **kwargs):
         doc = help_command.doc
-        if doc.target == 'man':
-            doc.write('* %s\n' % command_name)
-        else:
-            doc.write('  %s\n' % command_name)
+        doc.style.tocitem(command_name)
 
 
 class OperationDocumentEventHandler(CLIDocumentEventHandler):
 
     def build_translation_map(self):
-        for param in self.operation.params:
-            self.translation_map[param.name] = param.cli_name
-        for operation in self.operation.service.operations:
-            self.translation_map[operation.name] = operation.cli_name
+        LOG.debug('build_translation_map')
+        operation = self.help_command.obj
+        d = {}
+        for param in operation.params:
+            d[param.name] = param.cli_name
+        for operation in operation.service.operations:
+            d[operation.name] = operation.cli_name
+        return d
 
     def doc_title(self, help_command, **kwargs):
         doc = help_command.doc

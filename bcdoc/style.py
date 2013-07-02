@@ -194,15 +194,13 @@ class ReSTStyle(BaseStyle):
     def li(self, s):
         if s:
             self.start_li()
-            self.doc.write(s)
+            self.doc.writeln(s)
             self.end_li()
 
     def start_ul(self, attrs=None):
         self.new_paragraph()
-        self.indent()
 
     def end_ul(self):
-        self.dedent()
         self.new_paragraph()
 
     def start_examples(self, attrs=None):
@@ -245,8 +243,8 @@ class ReSTStyle(BaseStyle):
         else:
             self.start_ul()
 
-    def tocitem(self, html_name, man_name):
+    def tocitem(self, item):
         if self.doc.target == 'man':
-            self.doc.write('* %s\n' % service.service_full_name)
+            self.li(item)
         else:
-            self.fp.write('  %s/index\n' % service.endpoint_prefix)
+            self.fp.write('  %s/index\n' % item)
