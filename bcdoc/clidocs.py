@@ -99,35 +99,36 @@ class ProviderDocumentEventHandler(CLIDocumentEventHandler):
         provider = help_command.obj
         doc.style.h2('Description')
         doc.include_doc_string(help_command.description)
+        doc.style.new_paragraph()
 
-    def doc_synopsis(self, help_command, **kwargs):
+    def doc_synopsis_start(self, help_command, **kwargs):
         doc = help_command.doc
         provider = help_command.obj
         doc.style.h2('Synopsis')
         doc.style.codeblock(help_command.synopsis)
         doc.include_doc_string(help_command.help_usage)
+
+    def doc_synopsis_end(self, help_command, **kwargs):
+        doc = help_command.doc
         doc.style.new_paragraph()
 
-    def doc_options(self, help_command, **kwargs):
+    def doc_options_start(self, help_command, **kwargs):
         doc = help_command.doc
         doc.style.h2('Options')
 
     def doc_option(self, arg_name, help_command, **kwargs):
         doc = help_command.doc
         argument = help_command.arg_table[arg_name]
-        doc.write('``%s`` (%s)\n' % (argument.cli_name,
-                                      argument.cli_type_name))
-        doc.style.indent()
+        doc.writeln('``%s`` (%s)' % (argument.cli_name,
+                                     argument.cli_type_name))
         doc.include_doc_string(argument.documentation)
-        doc.style.dedent()
-        doc.style.new_paragraph()
         if argument.choices:
             doc.style.start_ul()
             for choice in argument.choices:
                 doc.style.li(choice)
             doc.style.end_ul()
 
-    def doc_subitems(self, help_command, **kwargs):
+    def doc_subitems_start(self, help_command, **kwargs):
         doc = help_command.doc
         doc.style.h2('Available Services')
         doc.style.toctree()
