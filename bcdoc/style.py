@@ -63,6 +63,10 @@ class ReSTStyle(BaseStyle):
         if self.do_p:
             self.doc.write('\n\n%s' % self.spaces())
 
+    def new_line(self):
+        if self.do_p:
+            self.doc.write('\n%s' % self.spaces())
+
     def start_bold(self, attrs=None):
         self.doc.write('**')
 
@@ -189,7 +193,7 @@ class ReSTStyle(BaseStyle):
 
     def end_li(self):
         self.do_p = True
-        self.doc.write('\n')
+        self.new_line()
 
     def li(self, s):
         if s:
@@ -201,6 +205,13 @@ class ReSTStyle(BaseStyle):
         self.new_paragraph()
 
     def end_ul(self):
+        self.new_paragraph()
+
+    def start_ol(self, attrs=None):
+        # TODO: Need to control the bullets used for LI items
+        self.new_paragraph()
+
+    def end_ol(self):
         self.new_paragraph()
 
     def start_examples(self, attrs=None):
@@ -247,4 +258,4 @@ class ReSTStyle(BaseStyle):
         if self.doc.target == 'man':
             self.li(item)
         else:
-            self.fp.write('  %s/index\n' % item)
+            self.doc.writeln('  %s' % item)

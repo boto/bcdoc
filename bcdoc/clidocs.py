@@ -12,11 +12,11 @@
 # language governing permissions and limitations under the License.
 import logging
 from six.moves import cStringIO
-from botocore.hooks import HierarchicalEmitter
 from bcdoc.docstringparser import DocStringParser
 from bcdoc.style import ReSTStyle
 from bcdoc.clidocevents import DOC_EVENTS
 
+SCALARS = ('string', 'integer', 'boolean', 'timestamp', 'float', 'double')
 LOG = logging.getLogger(__name__)
 
 
@@ -34,10 +34,16 @@ class ReSTDocument(object):
         self.translation_map = {}
 
     def write(self, s):
-        self.fp.write(s)
+        if self.keep_data:
+            self.fp.write(s)
 
     def writeln(self, s):
-        self.fp.write('%s%s\n' % (self.style.spaces(), s))
+        if self.keep_data:
+            self.fp.write('%s%s\n' % (self.style.spaces(), s))
+
+    def writeraw(self, s):
+        if self.keep_data:
+            self.fp.write(s)
 
     def translate_words(self, words):
         return [self.translation_map.get(w, w) for w in words]
@@ -61,31 +67,44 @@ class CLIDocumentEventHandler(object):
 
     def __init__(self, help_command):
         self.help_command = help_command
-        self.initialize(help_command.session, help_command.event_class)
+        self.register(help_command.session, help_command.event_class)
         self.help_command.doc.translation_map = self.build_translation_map()
 
     def build_translation_map(self):
         return dict()
 
-    def initialize(self, session, event_class):
-        """
-        The default initialization iterates through all of the
-        available document events and looks for a corresponding
-        handler method defined in the object.  If it's there, that
-        handler method will be registered for the all events of
-        that type for the specified ``event_class``.
-        """
+    def _map_handlers(self, session, event_class, mapfn):
         for event in DOC_EVENTS:
             event_handler_name = event.replace('-', '_')
             if hasattr(self, event_handler_name):
-                LOG.debug('found event_handler: %s' % event_handler_name)
                 event_handler = getattr(self, event_handler_name)
                 format_string = DOC_EVENTS[event]
                 num_args = len(format_string.split('.')) - 2
                 format_args = (event_class,) + ('*',) * num_args
                 event_string = event + format_string % format_args
-                LOG.debug('about to register: %s' % event_string)
-                session.register(event_string, event_handler)
+                mapfn(event_string, event_handler)
+
+    def register(self, session, event_class):
+        """
+        The default register iterates through all of the
+        available document events and looks for a corresponding
+        handler method defined in the object.  If it's there, that
+        handler method will be registered for the all events of
+        that type for the specified ``event_class``.
+        """
+        self._map_handlers(session, event_class, session.register)
+
+    def unregister(self):
+        """
+        The default unregister iterates through all of the
+        available document events and looks for a corresponding
+        handler method defined in the object.  If it's there, that
+        handler method will be unregistered for the all events of
+        that type for the specified ``event_class``.
+        """
+        self._map_handlers(self.help_command.session,
+                           self.help_command.event_class,
+                           self.help_command.session.unregister)
 
 
 class ProviderDocumentEventHandler(CLIDocumentEventHandler):
@@ -135,7 +154,7 @@ class ProviderDocumentEventHandler(CLIDocumentEventHandler):
 
     def doc_subitem(self, command_name, help_command, **kwargs):
         doc = help_command.doc
-        doc.style.tocitem(command_name)
+        doc.style.tocitem(command_name+'/index')
 
 
 class ServiceDocumentEventHandler(CLIDocumentEventHandler):
@@ -198,7 +217,7 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
         doc = help_command.doc
         argument = help_command.arg_table[arg_name]
         option_str = argument.cli_name
-        if argument.cli_type != 'boolean':
+        if argument.cli_type_name != 'boolean':
             option_str += ' <value>'
         if not argument.required:
             option_str = '[%s]' % option_str
@@ -208,7 +227,7 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
         doc = help_command.doc
         doc.style.end_codeblock()
 
-    def doc_options(self, help_command, **kwargs):
+    def doc_options_start(self, help_command, **kwargs):
         doc = help_command.doc
         operation = help_command.obj
         doc.style.h2('Options')
@@ -225,7 +244,75 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
         doc.style.dedent()
         doc.style.new_paragraph()
 
-    def doc_example_shorthand(self, arg_name, help_command, **kwargs):
+    def _json_example_value_name(self, param):
+        if param.type == 'string':
+            if hasattr(param, 'enum'):
+                choices = param.enum
+                return '|'.join(['"%s"' % c for c in choices])
+            else:
+                return '"string"'
+        elif param.type == 'boolean':
+            return 'true|false'
+        else:
+            return '%s' % param.type
+
+    def _json_example(self, doc, param):
+        if param.type == 'list':
+            doc.write('[')
+            if param.members.type in SCALARS:
+                doc.write('%s, ...' % self._json_example_value_name(param.members))
+            else:
+                doc.style.indent()
+                doc.style.new_line()
+                self._json_example(doc, param.members)
+                doc.style.new_line()
+                doc.write('...')
+                doc.style.dedent()
+                doc.style.new_line()
+            doc.write(']')
+        elif param.type == 'map':
+            doc.write('{')
+            doc.style.indent()
+            key_string = self._json_example_value_name(param.keys)
+            doc.write('%s: ' % key_string)
+            if param.members.type in SCALARS:
+                doc.write(self._json_example_value_name(param.members))
+            else:
+                doc.style.indent()
+                self._json_example(doc, param.members)
+                doc.style.dedent()
+            doc.style.new_line()
+            doc.write('...')
+            doc.style.dedent()
+            doc.writeln('}')
+        elif param.type == 'structure':
+            doc.write('{')
+            doc.style.indent()
+            doc.style.new_line()
+            members = []
+            for i, member in enumerate(param.members):
+                if member.type in SCALARS:
+                    doc.write('"%s": %s' % (member.py_name,
+                        self._json_example_value_name(member)))
+                elif member.type == 'structure':
+                    doc.write('"%s": ' % member.py_name)
+                    self._json_example(doc, member)
+                elif member.type == 'map':
+                    doc.write('"%s": ' % member.py_name)
+                    self._json_example(doc, member)
+                elif member.type == 'list':
+                    doc.write('"%s": ' % member.py_name)
+                    self._json_example(doc, member)
+                if i < len(param.members) - 1:
+                    doc.write(',')
+                    doc.style.new_line()
+                else:
+                    doc.style.dedent()
+                    doc.style.new_line()
+            doc.write('}')
+
+
+    def doc_option_example(self, arg_name, help_command, **kwargs):
         doc = help_command.doc
         argument = help_command.arg_table[arg_name]
         param = argument.argument_object
@@ -236,6 +323,32 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
             for example_line in param.example_fn(param).splitlines():
                 doc.writeln(example_line)
             doc.style.end_codeblock()
+        if param.type not in SCALARS:
+            doc.style.new_paragraph()
+            doc.write('JSON Syntax')
+            doc.style.start_codeblock()
+            self._json_example(doc, param)
+            doc.style.end_codeblock()
+            doc.style.new_paragraph()
+
+    def doc_options_end(self, help_command, **kwargs):
+        doc = help_command.doc
+        operation = help_command.obj
+        if hasattr(operation, 'filters'):
+            doc.style.h2('Filters')
+            sorted_names = sorted(operation.filters)
+            for filter_name in sorted_names:
+                filter_data = operation.filters[filter_name]
+                doc.style.h3(filter_name)
+                if 'documentation' in filter_data:
+                    doc.include_doc_string(filter_data['documentation'])
+                if 'choices' in filter_data:
+                    doc.style.new_paragraph()
+                    doc.write('Valid Values: ')
+                    choices = '|'.join(filter_data['choices'])
+                    doc.write(choices)
+                doc.style.new_paragraph()
+
 
 
         
