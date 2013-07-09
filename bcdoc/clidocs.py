@@ -115,14 +115,12 @@ class ProviderDocumentEventHandler(CLIDocumentEventHandler):
 
     def doc_description(self, help_command, **kwargs):
         doc = help_command.doc
-        provider = help_command.obj
         doc.style.h2('Description')
         doc.include_doc_string(help_command.description)
         doc.style.new_paragraph()
 
     def doc_synopsis_start(self, help_command, **kwargs):
         doc = help_command.doc
-        provider = help_command.obj
         doc.style.h2('Synopsis')
         doc.style.codeblock(help_command.synopsis)
         doc.include_doc_string(help_command.help_usage)
@@ -289,7 +287,6 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
             doc.write('{')
             doc.style.indent()
             doc.style.new_line()
-            members = []
             for i, member in enumerate(param.members):
                 if member.type in SCALARS:
                     doc.write('"%s": %s' % (member.py_name,
@@ -310,7 +307,6 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
                     doc.style.dedent()
                     doc.style.new_line()
             doc.write('}')
-
 
     def doc_option_example(self, arg_name, help_command, **kwargs):
         doc = help_command.doc
@@ -348,7 +344,3 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
                     choices = '|'.join(filter_data['choices'])
                     doc.write(choices)
                 doc.style.new_paragraph()
-
-
-
-        
