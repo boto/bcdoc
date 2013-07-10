@@ -12,7 +12,6 @@
 # language governing permissions and limitations under the License.
 
 
-
 DOC_EVENTS = {
     'doc-title': '.%s.%s',
     'doc-description': '.%s.%s',
@@ -29,9 +28,11 @@ DOC_EVENTS = {
     'doc-subitems-end': '.%s.%s',
     }
 
+
 def fire_event(session, event_name, *fmtargs, **kwargs):
     event = session.create_event(event_name, *fmtargs)
     session.emit(event, **kwargs)
+
 
 def generate_events(session, help_command):
     # First, register all events
@@ -39,7 +40,6 @@ def generate_events(session, help_command):
         session.register_event(event_name,
                                DOC_EVENTS[event_name])
     # Now generate the documentation events
-    event_class = help_command.event_class
     fire_event(session, 'doc-title', help_command.event_class,
                help_command.name, help_command=help_command)
     fire_event(session, 'doc-description', help_command.event_class,
