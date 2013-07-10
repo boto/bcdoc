@@ -82,7 +82,8 @@ class CLIDocumentEventHandler(object):
                 num_args = len(format_string.split('.')) - 2
                 format_args = (event_class,) + ('*',) * num_args
                 event_string = event + format_string % format_args
-                mapfn(event_string, event_handler)
+                unique_id = event_class + event_handler_name
+                mapfn(event_string, event_handler, unique_id)
 
     def register(self, session, event_class):
         """
