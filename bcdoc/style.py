@@ -258,4 +258,4 @@ class ReSTStyle(BaseStyle):
         if self.doc.target == 'man':
             self.li(item)
         else:
-            self.doc.writeln('  %s' % item)
+            self.doc.writeln('  %s' % (item + '/index'))
