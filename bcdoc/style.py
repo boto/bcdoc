@@ -254,8 +254,12 @@ class ReSTStyle(BaseStyle):
         else:
             self.start_ul()
 
-    def tocitem(self, item):
+    def tocitem(self, item, file_name=None):
         if self.doc.target == 'man':
             self.li(item)
         else:
-            self.doc.writeln('  %s' % (item + '/index'))
+            if file_name:
+                self.doc.writeln('  %s' % file_name)
+            else:
+                self.doc.writeln('  %s' % item)
+
