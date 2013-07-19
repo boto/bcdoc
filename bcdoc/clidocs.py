@@ -291,16 +291,16 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
             doc.style.new_line()
             for i, member in enumerate(param.members):
                 if member.type in SCALARS:
-                    doc.write('"%s": %s' % (member.py_name,
+                    doc.write('"%s": %s' % (member.name,
                         self._json_example_value_name(member)))
                 elif member.type == 'structure':
-                    doc.write('"%s": ' % member.py_name)
+                    doc.write('"%s": ' % member.name)
                     self._json_example(doc, member)
                 elif member.type == 'map':
-                    doc.write('"%s": ' % member.py_name)
+                    doc.write('"%s": ' % member.name)
                     self._json_example(doc, member)
                 elif member.type == 'list':
-                    doc.write('"%s": ' % member.py_name)
+                    doc.write('"%s": ' % member.name)
                     self._json_example(doc, member)
                 if i < len(param.members) - 1:
                     doc.write(',')
