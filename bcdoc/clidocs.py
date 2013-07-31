@@ -11,56 +11,96 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 import logging
-from six.moves import cStringIO
 from bcdoc.docstringparser import DocStringParser
 from bcdoc.style import ReSTStyle
 from bcdoc.clidocevents import DOC_EVENTS
 
-SCALARS = ('string', 'integer', 'boolean', 'timestamp', 'float', 'double')
-LOG = logging.getLogger(__name__)
+SCALARS = ('string', 'integer', 'long', 'boolean', 'timestamp',
+           'float', 'double', 'blob')
+
+LOG = logging.getLogger('bcdocs')
 
 
 class ReSTDocument(object):
 
-    def __init__(self, fp=None, target='man'):
-        if fp is None:
-            fp = cStringIO()
-        self.fp = fp
+    def __init__(self, target='man'):
         self.style = ReSTStyle(self)
         self.target = target
         self.parser = DocStringParser(self)
         self.keep_data = True
         self.do_translation = False
         self.translation_map = {}
+        self.hrefs = {}
+        self._writes = []
 
-    def write(self, s):
+    def _write(self, s):
         if self.keep_data:
-            self.fp.write(s)
+            self._last_write = s
+            self._writes.append(s)
 
-    def writeln(self, s):
-        if self.keep_data:
-            self.fp.write('%s%s\n' % (self.style.spaces(), s))
+    def write(self, content):
+        """
+        Write content into the document.
+        """
+        self._write(content)
 
-    def writeraw(self, s):
-        if self.keep_data:
-            self.fp.write(s)
+    def writeln(self, content):
+        """
+        Write content on a newline.
+        """
+        self._write('%s%s\n' % (self.style.spaces(), content))
+
+    def writeraw(self, content):
+        """
+        Write content, bypassing current indentation.  This is mainly
+        useful for inserting chunks of preformatted ReST content into
+        the document.
+        """
+        self._write(content)
+
+    def peek_write(self):
+        """
+        Returns the last content written to the document without
+        removing it from the stack.
+        """
+        return self._writes[-1]
+
+    def pop_write(self):
+        """
+        Removes and returns the last content written to the stack.
+        """
+        return self._writes.pop()
+
+    def push_write(self, s):
+        """
+        Places new content on the stack.
+        """
+        self._writes.append(s)
+
+    def getvalue(self):
+        """
+        Returns the current content of the document as a string.
+        """
+        if self.hrefs:
+            self.style.new_paragraph()
+            for refname, link in self.hrefs.items():
+                self.style.link_target_definition(refname, link)
+        return ''.join(self._writes).encode('utf-8')
 
     def translate_words(self, words):
         return [self.translation_map.get(w, w) for w in words]
 
     def handle_data(self, data):
         if data and self.keep_data:
-            # Some of the JSON service descriptions have
-            # Unicode constants embedded in the doc strings
-            # which cause UnicodeEncodeErrors in Python 2.x
-            try:
-                self.write(data)
-            except UnicodeEncodeError:
-                self.write(data.encode('utf-8'))
+            self._write(data)
 
     def include_doc_string(self, doc_string):
         if doc_string:
-            self.parser.feed(doc_string)
+            try:
+                self.parser.feed(doc_string)
+            except Exception:
+                LOG.debug('Error parsing doc string', exc_info=True)
+                LOG.debug(doc_string)
 
 
 class CLIDocumentEventHandler(object):
@@ -284,7 +324,7 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
             doc.style.new_line()
             doc.write('...')
             doc.style.dedent()
-            doc.writeln('}')
+            doc.write('}')
         elif param.type == 'structure':
             doc.write('{')
             doc.style.indent()
@@ -321,7 +361,7 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
             for example_line in param.example_fn(param).splitlines():
                 doc.writeln(example_line)
             doc.style.end_codeblock()
-        if param.type not in SCALARS:
+        if argument.cli_type_name not in SCALARS:
             doc.style.new_paragraph()
             doc.write('JSON Syntax')
             doc.style.start_codeblock()
