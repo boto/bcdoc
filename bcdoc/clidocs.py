@@ -35,7 +35,6 @@ class ReSTDocument(object):
 
     def _write(self, s):
         if self.keep_data:
-            self._last_write = s
             self._writes.append(s)
 
     def write(self, content):
@@ -49,14 +48,6 @@ class ReSTDocument(object):
         Write content on a newline.
         """
         self._write('%s%s\n' % (self.style.spaces(), content))
-
-    def writeraw(self, content):
-        """
-        Write content, bypassing current indentation.  This is mainly
-        useful for inserting chunks of preformatted ReST content into
-        the document.
-        """
-        self._write(content)
 
     def peek_write(self):
         """
