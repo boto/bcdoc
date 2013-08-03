@@ -345,7 +345,7 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
         doc = help_command.doc
         argument = help_command.arg_table[arg_name]
         param = argument.argument_object
-        if param.example_fn:
+        if param and param.example_fn:
             doc.style.new_paragraph()
             doc.write('Shorthand Syntax')
             doc.style.start_codeblock()
