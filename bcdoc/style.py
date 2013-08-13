@@ -11,6 +11,10 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import logging
+
+logger = logging.getLogger('bcdocs')
+
 
 class BaseStyle(object):
 
@@ -67,11 +71,25 @@ class ReSTStyle(BaseStyle):
         if self.do_p:
             self.doc.write('\n%s' % self.spaces())
 
+    def _start_inline(self, markup):
+        self.doc.write(markup)
+
+    def _end_inline(self, markup):
+        # Sometimes the HTML markup has whitespace between the end
+        # of the text inside the inline markup and the closing element
+        # (e.g. <b>foobar </b>).  This trailing space will cause
+        # problems in the ReST inline markup so we remove it here
+        # by popping the last item written off the stack, striping
+        # the whitespace and then pushing it back on the stack.
+        last_write = self.doc.pop_write()
+        self.doc.push_write(last_write.rstrip(' '))
+        self.doc.write(markup + ' ')
+
     def start_bold(self, attrs=None):
-        self.doc.write('**')
+        self._start_inline('**')
 
     def end_bold(self):
-        self.doc.write('** ')
+        self._end_inline('**')
 
     def start_b(self, attrs=None):
         self.doc.do_translation = True
@@ -79,7 +97,7 @@ class ReSTStyle(BaseStyle):
 
     def end_b(self):
         self.doc.do_translation = False
-        self.doc.write('** ')
+        self.end_bold()
 
     def bold(self, s):
         if s:
@@ -108,10 +126,10 @@ class ReSTStyle(BaseStyle):
         self._heading(s, '-')
 
     def start_italics(self, attrs=None):
-        self.doc.write('*')
+        self._start_inline('*')
 
     def end_italics(self):
-        self.doc.write('* ')
+        self._end_inline('*')
 
     def italics(self, s):
         if s:
@@ -129,11 +147,11 @@ class ReSTStyle(BaseStyle):
 
     def start_code(self, attrs=None):
         self.doc.do_translation = True
-        self.doc.write('``')
+        self._start_inline('``')
 
     def end_code(self):
         self.doc.do_translation = False
-        self.doc.write('`` ')
+        self._end_inline('`` ')
 
     def code(self, s):
         if s:
@@ -171,10 +189,20 @@ class ReSTStyle(BaseStyle):
             self.doc.write(' ')
         self.doc.do_translation = True
 
+    def link_target_definition(self, refname, link):
+        self.doc.writeln('.. _%s: %s' % (refname, link))
+
     def end_a(self):
         self.doc.do_translation = False
         if self.a_href:
-            self.doc.write(' <%s>' % self.a_href)
+            last_write = self.doc.pop_write()
+            last_write = last_write.rstrip(' ')
+            if last_write:
+                self.doc.push_write(last_write)
+                self.doc.hrefs[last_write] = self.a_href
+            else:
+                self.doc.push_write(self.a_href)
+                self.doc.hrefs[self.a_href] = self.a_href
             self.a_href = None
             self.doc.write('`_')
         self.doc.write(' ')
@@ -188,6 +216,7 @@ class ReSTStyle(BaseStyle):
         self.end_italics()
 
     def start_li(self, attrs=None):
+        self.new_line()
         self.do_p = False
         self.doc.write('* ')
 
