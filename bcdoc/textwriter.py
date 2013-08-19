@@ -701,7 +701,7 @@ class TextTranslator(nodes.NodeVisitor):
         self.new_state(2)
     def _make_depart_admonition(name):
         def depart_admonition(self, node):
-            self.end_state(first=admonitionlabels[name] + ': ')
+            self.end_state(first=name.capitalize() + ': ')
         return depart_admonition
 
     visit_attention = _visit_admonition
