@@ -130,12 +130,14 @@ class TextTranslator(nodes.NodeVisitor):
     def visit_rubric(self, node):
         self.new_state(0)
         self.add_text('-[ ')
+
     def depart_rubric(self, node):
         self.add_text(' ]-')
         self.end_state()
 
     def visit_compound(self, node):
         pass
+
     def depart_compound(self, node):
         pass
 
@@ -661,16 +663,19 @@ class TextTranslator(nodes.NodeVisitor):
 
     def visit_generated(self, node):
         pass
+
     def depart_generated(self, node):
         pass
 
     def visit_inline(self, node):
         pass
+
     def depart_inline(self, node):
         pass
 
     def visit_problematic(self, node):
         self.add_text('>>')
+
     def depart_problematic(self, node):
         self.add_text('<<')
 
@@ -691,6 +696,32 @@ class TextTranslator(nodes.NodeVisitor):
         if 'text' in node.get('format', '').split():
             self.body.append(node.astext())
         raise nodes.SkipNode
+
+    def _visit_admonition(self, node):
+        self.new_state(2)
+    def _make_depart_admonition(name):
+        def depart_admonition(self, node):
+            self.end_state(first=admonitionlabels[name] + ': ')
+        return depart_admonition
+
+    visit_attention = _visit_admonition
+    depart_attention = _make_depart_admonition('attention')
+    visit_caution = _visit_admonition
+    depart_caution = _make_depart_admonition('caution')
+    visit_danger = _visit_admonition
+    depart_danger = _make_depart_admonition('danger')
+    visit_error = _visit_admonition
+    depart_error = _make_depart_admonition('error')
+    visit_hint = _visit_admonition
+    depart_hint = _make_depart_admonition('hint')
+    visit_important = _visit_admonition
+    depart_important = _make_depart_admonition('important')
+    visit_note = _visit_admonition
+    depart_note = _make_depart_admonition('note')
+    visit_tip = _visit_admonition
+    depart_tip = _make_depart_admonition('tip')
+    visit_warning = _visit_admonition
+    depart_warning = _make_depart_admonition('warning')
 
     def unknown_visit(self, node):
         raise NotImplementedError('Unknown node: ' + node.__class__.__name__)
