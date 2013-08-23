@@ -71,6 +71,9 @@ def generate_events(session, help_command):
                help_command.name, help_command=help_command)
     if help_command.command_table:
         for command_name in help_command.command_table.keys():
+            if hasattr(help_command.command_table[command_name],
+                       '_UNDOCUMENTED'):
+                continue
             fire_event(session, 'doc-subitem', help_command.event_class,
                        help_command.name, command_name,
                        command_name=command_name, help_command=help_command)
