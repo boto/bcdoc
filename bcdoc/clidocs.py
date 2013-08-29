@@ -218,6 +218,18 @@ class ServiceDocumentEventHandler(CLIDocumentEventHandler):
 
 class OperationDocumentEventHandler(CLIDocumentEventHandler):
 
+    def __init__(self, help_command):
+        super(OperationDocumentEventHandler, self).__init__(help_command)
+        self._arg_groups = self._build_arg_table_groups(help_command)
+        self._documented_arg_groups = []
+
+    def _build_arg_table_groups(self, help_command):
+        arg_groups = {}
+        for name, arg in help_command.arg_table.items():
+            if arg.group_name is not None:
+                arg_groups.setdefault(arg.group_name, []).append(arg)
+        return arg_groups
+
     def build_translation_map(self):
         LOG.debug('build_translation_map')
         operation = self.help_command.obj
@@ -268,8 +280,17 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
     def doc_option(self, arg_name, help_command, **kwargs):
         doc = help_command.doc
         argument = help_command.arg_table[arg_name]
-        doc.write('``%s`` (%s)\n' % (argument.cli_name,
-                                     argument.cli_type_name))
+        if argument.group_name in self._arg_groups:
+            if argument.group_name in self._documented_arg_groups:
+                # This arg is already documented so we can move on.
+                return
+            name = ' | '.join(
+                ['``%s``' % a.cli_name for a in
+                 self._arg_groups[argument.group_name]])
+            self._documented_arg_groups.append(argument.group_name)
+        else:
+            name = '``%s``' % argument.cli_name
+        doc.write('%s (%s)\n' % (name, argument.cli_type_name))
         doc.style.indent()
         doc.include_doc_string(argument.documentation)
         doc.style.dedent()
