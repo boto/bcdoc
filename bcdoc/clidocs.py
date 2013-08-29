@@ -367,13 +367,30 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
         argument = help_command.arg_table[arg_name]
         param = argument.argument_object
         if param and param.example_fn:
+            # TODO: bcdoc should not know about shorthand syntax. This
+            # should be pulled out into a separate handler in the
+            # awscli.customizations package.
             doc.style.new_paragraph()
             doc.write('Shorthand Syntax')
             doc.style.start_codeblock()
             for example_line in param.example_fn(param).splitlines():
                 doc.writeln(example_line)
             doc.style.end_codeblock()
-        if argument.cli_type_name not in SCALARS:
+        if param is not None and param.type == 'list' and \
+                param.members.type in SCALARS:
+            # A list of scalars is special.  While you *can* use
+            # JSON ( ["foo", "bar", "baz"] ), you can also just
+            # use the argparse behavior of space separated lists.
+            # "foo" "bar" "baz".  In fact we don't even want to
+            # document the JSON syntax in this case.
+            doc.style.new_paragraph()
+            doc.write('Syntax')
+            doc.style.start_codeblock()
+            example_type = self._json_example_value_name(param.members)
+            doc.write('%s %s ...' % (example_type, example_type))
+            doc.style.end_codeblock()
+            doc.style.new_paragraph()
+        elif argument.cli_type_name not in SCALARS:
             doc.style.new_paragraph()
             doc.write('JSON Syntax')
             doc.style.start_codeblock()
