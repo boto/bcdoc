@@ -70,7 +70,7 @@ def generate_events(session, help_command):
     fire_event(session, 'doc-subitems-start', help_command.event_class,
                help_command.name, help_command=help_command)
     if help_command.command_table:
-        for command_name in help_command.command_table.keys():
+        for command_name in sorted(help_command.command_table.keys()):
             if hasattr(help_command.command_table[command_name],
                        '_UNDOCUMENTED'):
                 continue
