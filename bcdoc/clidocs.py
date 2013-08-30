@@ -263,6 +263,7 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
         doc.include_doc_string(operation.documentation)
 
     def doc_synopsis_start(self, help_command, **kwargs):
+        self._documented_arg_groups = []
         doc = help_command.doc
         doc.style.h2('Synopsis')
         doc.style.start_codeblock()
@@ -271,9 +272,16 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
     def doc_synopsis_option(self, arg_name, help_command, **kwargs):
         doc = help_command.doc
         argument = help_command.arg_table[arg_name]
-        option_str = argument.cli_name
-        if argument.cli_type_name != 'boolean':
-            option_str += ' <value>'
+        if argument.group_name in self._arg_groups:
+            if argument.group_name in self._documented_arg_groups:
+                # This arg is already documented so we can move on.
+                return
+            option_str = ' | '.join(
+                [a.cli_name for a in
+                 self._arg_groups[argument.group_name]])
+            self._documented_arg_groups.append(argument.group_name)
+        elif argument.cli_type_name != 'boolean':
+            option_str = '%s <value>' % argument.cli_name
         if not argument.required:
             option_str = '[%s]' % option_str
         doc.writeln('%s' % option_str)
@@ -281,6 +289,10 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
     def doc_synopsis_end(self, help_command, **kwargs):
         doc = help_command.doc
         doc.style.end_codeblock()
+        # Reset the documented arg groups for other sections
+        # that may document args (the detailed docs following
+        # the synopsis).
+        self._documented_arg_groups = []
 
     def doc_options_start(self, help_command, **kwargs):
         doc = help_command.doc
