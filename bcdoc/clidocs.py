@@ -240,6 +240,18 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
             d[operation.name] = operation.cli_name
         return d
 
+    def doc_breadcrumbs(self, help_command, event_name, **kwargs):
+        doc = help_command.doc
+        if doc.target != 'man':
+            l = event_name.split('.')
+            if len(l) > 1:
+                service_name = l[1]
+                doc.write('[ ')
+                doc.style.ref('aws', '../index')
+                doc.write(' . ')
+                doc.style.ref(service_name, 'index')
+                doc.write(' ]')
+
     def doc_title(self, help_command, **kwargs):
         doc = help_command.doc
         doc.style.h1(help_command.name)

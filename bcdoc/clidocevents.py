@@ -13,6 +13,7 @@
 
 
 DOC_EVENTS = {
+    'doc-breadcrumbs': '.%s.%s',
     'doc-title': '.%s.%s',
     'doc-description': '.%s.%s',
     'doc-synopsis-start': '.%s.%s',
@@ -40,6 +41,8 @@ def generate_events(session, help_command):
         session.register_event(event_name,
                                DOC_EVENTS[event_name])
     # Now generate the documentation events
+    fire_event(session, 'doc-breadcrumbs', help_command.event_class,
+               help_command.name, help_command=help_command)
     fire_event(session, 'doc-title', help_command.event_class,
                help_command.name, help_command=help_command)
     fire_event(session, 'doc-description', help_command.event_class,
