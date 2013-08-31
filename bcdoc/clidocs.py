@@ -280,7 +280,7 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
                 [a.cli_name for a in
                  self._arg_groups[argument.group_name]])
             self._documented_arg_groups.append(argument.group_name)
-        elif argument.cli_type_name != 'boolean':
+        else:
             option_str = '%s <value>' % argument.cli_name
         if not argument.required:
             option_str = '[%s]' % option_str
