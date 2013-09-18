@@ -151,7 +151,7 @@ class ReSTStyle(BaseStyle):
 
     def end_code(self):
         self.doc.do_translation = False
-        self._end_inline('`` ')
+        self._end_inline('``')
 
     def code(self, s):
         if s:
