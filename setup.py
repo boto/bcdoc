@@ -22,7 +22,7 @@ setup(
     name='bcdoc',
     version='0.9.0',
     description='ReST document generation tools for botocore.',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     author='Mitch Garnaat',
     author_email='mitch@garnaat.com',
     url='https://github.com/botocore/bcdoc',
