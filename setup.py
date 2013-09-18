@@ -4,9 +4,6 @@
 distutils/setuptools install script.
 """
 
-import os
-import sys
-
 try:
     from setuptools import setup
     setup
