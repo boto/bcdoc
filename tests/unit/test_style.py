@@ -22,7 +22,7 @@
 #
 import unittest
 
-from six.moves import cStringIO
+import six
 
 from bcdoc.style import ReSTStyle
 from bcdoc.clidocs import ReSTDocument
@@ -47,41 +47,41 @@ class TestStyle(unittest.TestCase):
     def test_bold(self):
         style = ReSTStyle(ReSTDocument())
         style.bold('foobar')
-        self.assertEqual(style.doc.getvalue(), '**foobar** ')
+        self.assertEqual(style.doc.getvalue(), six.b('**foobar** '))
 
     def test_italics(self):
         style = ReSTStyle(ReSTDocument())
         style.italics('foobar')
-        self.assertEqual(style.doc.getvalue(), '*foobar* ')
+        self.assertEqual(style.doc.getvalue(), six.b('*foobar* '))
 
     def test_code(self):
         style = ReSTStyle(ReSTDocument())
         style.code('foobar')
-        self.assertEqual(style.doc.getvalue(), '``foobar`` ')
+        self.assertEqual(style.doc.getvalue(), six.b('``foobar`` '))
 
     def test_h1(self):
         style = ReSTStyle(ReSTDocument())
         style.h1('foobar fiebaz')
         self.assertEqual(style.doc.getvalue(),
-                         '\n\n*************\nfoobar fiebaz\n*************\n\n')
+                         six.b('\n\n*************\nfoobar fiebaz\n*************\n\n'))
         
     def test_h2(self):
         style = ReSTStyle(ReSTDocument())
         style.h2('foobar fiebaz')
         self.assertEqual(style.doc.getvalue(),
-                         '\n\n=============\nfoobar fiebaz\n=============\n\n')
+                         six.b('\n\n=============\nfoobar fiebaz\n=============\n\n'))
         
     def test_h3(self):
         style = ReSTStyle(ReSTDocument())
         style.h3('foobar fiebaz')
         self.assertEqual(style.doc.getvalue(),
-                         '\n\n-------------\nfoobar fiebaz\n-------------\n\n')
+                         six.b('\n\n-------------\nfoobar fiebaz\n-------------\n\n'))
         
     def test_ref(self):
         style = ReSTStyle(ReSTDocument())
         style.ref('foobar', 'http://foo.bar.com')
         self.assertEqual(style.doc.getvalue(),
-                         ':doc:`foobar <http://foo.bar.com>`')
+                         six.b(':doc:`foobar <http://foo.bar.com>`'))
 
     def test_examples(self):
         style = ReSTStyle(ReSTDocument())
@@ -95,7 +95,7 @@ class TestStyle(unittest.TestCase):
         style = ReSTStyle(ReSTDocument())
         style.codeblock('foobar')
         self.assertEqual(style.doc.getvalue(),
-                         '::\n\n  foobar\n\n\n')
+                         six.b('::\n\n  foobar\n\n\n'))
 
     def test_toctree_html(self):
         style = ReSTStyle(ReSTDocument())
@@ -104,7 +104,7 @@ class TestStyle(unittest.TestCase):
         style.tocitem('foo')
         style.tocitem('bar')
         self.assertEqual(style.doc.getvalue(),
-                         '\n.. toctree::\n  :maxdepth: 1\n  :titlesonly:\n\n  foo\n  bar\n')
+                         six.b('\n.. toctree::\n  :maxdepth: 1\n  :titlesonly:\n\n  foo\n  bar\n'))
         
     def test_toctree_man(self):
         style = ReSTStyle(ReSTDocument())
@@ -113,5 +113,5 @@ class TestStyle(unittest.TestCase):
         style.tocitem('foo')
         style.tocitem('bar')
         self.assertEqual(style.doc.getvalue(),
-                         '\n\n\n* foo\n\n\n* bar\n\n')
+                         six.b('\n\n\n* foo\n\n\n* bar\n\n'))
         
