@@ -47,19 +47,18 @@ def generate_events(session, help_command):
                help_command.name, help_command=help_command)
     fire_event(session, 'doc-description', help_command.event_class,
                help_command.name, help_command=help_command)
-    fire_event(session, 'doc-synopsis-start', help_command.event_class,
-               help_command.name, help_command=help_command)
     if help_command.arg_table:
+        fire_event(session, 'doc-synopsis-start', help_command.event_class,
+                help_command.name, help_command=help_command)
         for arg_name in help_command.arg_table:
             fire_event(session, 'doc-synopsis-option',
                        help_command.event_class,
                        help_command.name, arg_name,
                        arg_name=arg_name, help_command=help_command)
-    fire_event(session, 'doc-synopsis-end', help_command.event_class,
-               help_command.name, help_command=help_command)
-    fire_event(session, 'doc-options-start', help_command.event_class,
-               help_command.name, help_command=help_command)
-    if help_command.arg_table:
+        fire_event(session, 'doc-synopsis-end', help_command.event_class,
+                help_command.name, help_command=help_command)
+        fire_event(session, 'doc-options-start', help_command.event_class,
+                help_command.name, help_command=help_command)
         for arg_name in help_command.arg_table:
             fire_event(session, 'doc-option', help_command.event_class,
                        help_command.name, arg_name,
@@ -68,11 +67,11 @@ def generate_events(session, help_command):
                        help_command.event_class,
                        help_command.name, arg_name,
                        arg_name=arg_name, help_command=help_command)
-    fire_event(session, 'doc-options-end', help_command.event_class,
-               help_command.name, help_command=help_command)
-    fire_event(session, 'doc-subitems-start', help_command.event_class,
-               help_command.name, help_command=help_command)
+        fire_event(session, 'doc-options-end', help_command.event_class,
+                help_command.name, help_command=help_command)
     if help_command.command_table:
+        fire_event(session, 'doc-subitems-start', help_command.event_class,
+                help_command.name, help_command=help_command)
         for command_name in sorted(help_command.command_table.keys()):
             if hasattr(help_command.command_table[command_name],
                        '_UNDOCUMENTED'):
@@ -80,7 +79,7 @@ def generate_events(session, help_command):
             fire_event(session, 'doc-subitem', help_command.event_class,
                        help_command.name, command_name,
                        command_name=command_name, help_command=help_command)
-    fire_event(session, 'doc-subitems-end', help_command.event_class,
-               help_command.name, help_command=help_command)
+        fire_event(session, 'doc-subitems-end', help_command.event_class,
+                help_command.name, help_command=help_command)
     fire_event(session, 'doc-examples', help_command.event_class,
                help_command.name, help_command=help_command)
