@@ -100,6 +100,15 @@ class CLIDocumentEventHandler(object):
         self.help_command = help_command
         self.register(help_command.session, help_command.event_class)
         self.help_command.doc.translation_map = self.build_translation_map()
+        self._arg_groups = self._build_arg_table_groups(help_command)
+        self._documented_arg_groups = []
+
+    def _build_arg_table_groups(self, help_command):
+        arg_groups = {}
+        for name, arg in help_command.arg_table.items():
+            if arg.group_name is not None:
+                arg_groups.setdefault(arg.group_name, []).append(arg)
+        return arg_groups
 
     def build_translation_map(self):
         return dict()
@@ -138,8 +147,7 @@ class CLIDocumentEventHandler(object):
                            self.help_command.event_class,
                            self.help_command.session.unregister)
 
-
-class ProviderDocumentEventHandler(CLIDocumentEventHandler):
+    # These are default doc handlers that apply in the general case.
 
     def doc_title(self, help_command, **kwargs):
         doc = help_command.doc
@@ -152,10 +160,92 @@ class ProviderDocumentEventHandler(CLIDocumentEventHandler):
         doc.style.new_paragraph()
 
     def doc_synopsis_start(self, help_command, **kwargs):
+        self._documented_arg_groups = []
+        doc = help_command.doc
+        doc.style.h2('Synopsis')
+        doc.style.start_codeblock()
+        doc.writeln('%s' % help_command.name)
+
+    def doc_synopsis_option(self, arg_name, help_command, **kwargs):
+        doc = help_command.doc
+        argument = help_command.arg_table[arg_name]
+        if argument.group_name in self._arg_groups:
+            if argument.group_name in self._documented_arg_groups:
+                # This arg is already documented so we can move on.
+                return
+            option_str = ' | '.join(
+                [a.cli_name for a in
+                 self._arg_groups[argument.group_name]])
+            self._documented_arg_groups.append(argument.group_name)
+        else:
+            option_str = '%s <value>' % argument.cli_name
+        if not argument.required:
+            option_str = '[%s]' % option_str
+        doc.writeln('%s' % option_str)
+
+    def doc_synopsis_end(self, help_command, **kwargs):
+        doc = help_command.doc
+        doc.style.end_codeblock()
+        # Reset the documented arg groups for other sections
+        # that may document args (the detailed docs following
+        # the synopsis).
+        self._documented_arg_groups = []
+
+    def doc_options_start(self, help_command, **kwargs):
+        doc = help_command.doc
+        operation = help_command.obj
+        doc.style.h2('Options')
+        if not help_command.arg_table:
+            doc.write('*None*\n')
+
+    def doc_option(self, arg_name, help_command, **kwargs):
+        doc = help_command.doc
+        argument = help_command.arg_table[arg_name]
+        if argument.group_name in self._arg_groups:
+            if argument.group_name in self._documented_arg_groups:
+                # This arg is already documented so we can move on.
+                return
+            name = ' | '.join(
+                ['``%s``' % a.cli_name for a in
+                 self._arg_groups[argument.group_name]])
+            self._documented_arg_groups.append(argument.group_name)
+        else:
+            name = '``%s``' % argument.cli_name
+        doc.write('%s (%s)\n' % (name, argument.cli_type_name))
+        doc.style.indent()
+        doc.include_doc_string(argument.documentation)
+        doc.style.dedent()
+        doc.style.new_paragraph()
+
+    def doc_options_end(self, help_command, **kwargs):
+        doc = help_command.doc
+        operation = help_command.obj
+        if hasattr(operation, 'filters'):
+            doc.style.h2('Filters')
+            sorted_names = sorted(operation.filters)
+            for filter_name in sorted_names:
+                filter_data = operation.filters[filter_name]
+                doc.style.h3(filter_name)
+                if 'documentation' in filter_data:
+                    doc.include_doc_string(filter_data['documentation'])
+                if 'choices' in filter_data:
+                    doc.style.new_paragraph()
+                    doc.write('Valid Values: ')
+                    choices = '|'.join(filter_data['choices'])
+                    doc.write(choices)
+                doc.style.new_paragraph()
+
+
+class ProviderDocumentEventHandler(CLIDocumentEventHandler):
+
+    def doc_synopsis_start(self, help_command, **kwargs):
         doc = help_command.doc
         doc.style.h2('Synopsis')
         doc.style.codeblock(help_command.synopsis)
         doc.include_doc_string(help_command.help_usage)
+
+    def doc_synopsis_option(self, arg_name, help_command, **kwargs):
+        pass
 
     def doc_synopsis_end(self, help_command, **kwargs):
         doc = help_command.doc
@@ -196,6 +286,29 @@ class ServiceDocumentEventHandler(CLIDocumentEventHandler):
             d[op.name] = op.cli_name
         return d
 
+    # A service document has no synopsis.
+    def doc_synopsis_start(self, help_command, **kwargs):
+        pass
+
+    def doc_synopsis_option(self, arg_name, help_command, **kwargs):
+        pass
+
+    def doc_synopsis_end(self, help_command, **kwargs):
+        pass
+
+    # A service document has no option section.
+    def doc_options_start(self, help_command, **kwargs):
+        pass
+
+    def doc_option(self, arg_name, help_command, **kwargs):
+        pass
+
+    def doc_option_example(self, arg_name, help_command, **kwargs):
+        pass
+
+    def doc_options_end(self, help_command, **kwargs):
+        pass
+
     def doc_title(self, help_command, **kwargs):
         doc = help_command.doc
         doc.style.h1(help_command.name)
@@ -217,18 +330,6 @@ class ServiceDocumentEventHandler(CLIDocumentEventHandler):
 
 
 class OperationDocumentEventHandler(CLIDocumentEventHandler):
-
-    def __init__(self, help_command):
-        super(OperationDocumentEventHandler, self).__init__(help_command)
-        self._arg_groups = self._build_arg_table_groups(help_command)
-        self._documented_arg_groups = []
-
-    def _build_arg_table_groups(self, help_command):
-        arg_groups = {}
-        for name, arg in help_command.arg_table.items():
-            if arg.group_name is not None:
-                arg_groups.setdefault(arg.group_name, []).append(arg)
-        return arg_groups
 
     def build_translation_map(self):
         LOG.debug('build_translation_map')
@@ -261,64 +362,6 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
         operation = help_command.obj
         doc.style.h2('Description')
         doc.include_doc_string(operation.documentation)
-
-    def doc_synopsis_start(self, help_command, **kwargs):
-        self._documented_arg_groups = []
-        doc = help_command.doc
-        doc.style.h2('Synopsis')
-        doc.style.start_codeblock()
-        doc.writeln('%s' % help_command.name)
-
-    def doc_synopsis_option(self, arg_name, help_command, **kwargs):
-        doc = help_command.doc
-        argument = help_command.arg_table[arg_name]
-        if argument.group_name in self._arg_groups:
-            if argument.group_name in self._documented_arg_groups:
-                # This arg is already documented so we can move on.
-                return
-            option_str = ' | '.join(
-                [a.cli_name for a in
-                 self._arg_groups[argument.group_name]])
-            self._documented_arg_groups.append(argument.group_name)
-        else:
-            option_str = '%s <value>' % argument.cli_name
-        if not argument.required:
-            option_str = '[%s]' % option_str
-        doc.writeln('%s' % option_str)
-
-    def doc_synopsis_end(self, help_command, **kwargs):
-        doc = help_command.doc
-        doc.style.end_codeblock()
-        # Reset the documented arg groups for other sections
-        # that may document args (the detailed docs following
-        # the synopsis).
-        self._documented_arg_groups = []
-
-    def doc_options_start(self, help_command, **kwargs):
-        doc = help_command.doc
-        operation = help_command.obj
-        doc.style.h2('Options')
-        if len(operation.params) == 0:
-            doc.write('*None*\n')
-
-    def doc_option(self, arg_name, help_command, **kwargs):
-        doc = help_command.doc
-        argument = help_command.arg_table[arg_name]
-        if argument.group_name in self._arg_groups:
-            if argument.group_name in self._documented_arg_groups:
-                # This arg is already documented so we can move on.
-                return
-            name = ' | '.join(
-                ['``%s``' % a.cli_name for a in
-                 self._arg_groups[argument.group_name]])
-            self._documented_arg_groups.append(argument.group_name)
-        else:
-            name = '``%s``' % argument.cli_name
-        doc.write('%s (%s)\n' % (name, argument.cli_type_name))
-        doc.style.indent()
-        doc.include_doc_string(argument.documentation)
-        doc.style.dedent()
-        doc.style.new_paragraph()
 
     def _json_example_value_name(self, param):
         if param.type == 'string':
@@ -421,21 +464,3 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
             self._json_example(doc, param)
             doc.style.end_codeblock()
             doc.style.new_paragraph()
-
-    def doc_options_end(self, help_command, **kwargs):
-        doc = help_command.doc
-        operation = help_command.obj
-        if hasattr(operation, 'filters'):
-            doc.style.h2('Filters')
-            sorted_names = sorted(operation.filters)
-            for filter_name in sorted_names:
-                filter_data = operation.filters[filter_name]
-                doc.style.h3(filter_name)
-                if 'documentation' in filter_data:
-                    doc.include_doc_string(filter_data['documentation'])
-                if 'choices' in filter_data:
-                    doc.style.new_paragraph()
-                    doc.write('Valid Values: ')
-                    choices = '|'.join(filter_data['choices'])
-                    doc.write(choices)
-                doc.style.new_paragraph()
