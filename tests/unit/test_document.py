@@ -32,22 +32,22 @@ class TestReSTDocument(unittest.TestCase):
     def test_write(self):
         doc = ReSTDocument()
         doc.write('foo')
-        self.assertEqual(doc.getvalue(), 'foo')
+        self.assertEqual(doc.getvalue(), six.b('foo'))
 
     def test_writeln(self):
         doc = ReSTDocument()
         doc.writeln('foo')
-        self.assertEqual(doc.getvalue(), 'foo\n')
+        self.assertEqual(doc.getvalue(), six.b('foo\n'))
 
     def test_include_doc_string(self):
         doc = ReSTDocument()
         doc.include_doc_string('<p>this is a <code>test</code></p>')
-        self.assertEqual(doc.getvalue(), '\n\nthis is a ``test`` \n\n')
+        self.assertEqual(doc.getvalue(), six.b('\n\nthis is a ``test`` \n\n'))
         
     def test_remove_doc_string(self):
         doc = ReSTDocument()
         doc.writeln('foo')
         doc.include_doc_string('<p>this is a <code>test</code></p>')
         doc.remove_last_doc_string()
-        self.assertEqual(doc.getvalue(), 'foo\n')
+        self.assertEqual(doc.getvalue(), six.b('foo\n'))
         
