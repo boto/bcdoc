@@ -32,6 +32,7 @@ class ReSTDocument(object):
         self.translation_map = {}
         self.hrefs = {}
         self._writes = []
+        self._last_doc_string = None
 
     def _write(self, s):
         if self.keep_data:
@@ -88,10 +89,19 @@ class ReSTDocument(object):
     def include_doc_string(self, doc_string):
         if doc_string:
             try:
+                start = len(self._writes)
                 self.parser.feed(doc_string)
+                end = len(self._writes)
+                self._last_doc_string = (start, end)
             except Exception:
                 LOG.debug('Error parsing doc string', exc_info=True)
                 LOG.debug(doc_string)
+
+    def remove_last_doc_string(self):
+        # Removes all writes inserted by last doc string
+        if self._last_doc_string is not None:
+            start, end = self._last_doc_string
+            del self._writes[start:end]
 
 
 class CLIDocumentEventHandler(object):
