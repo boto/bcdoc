@@ -35,7 +35,7 @@ class ReSTDocument(object):
         self._last_doc_string = None
 
     def _write(self, s):
-        if self.keep_data:
+        if self.keep_data and s is not None:
             self._writes.append(s)
 
     def write(self, content):
@@ -474,3 +474,40 @@ class OperationDocumentEventHandler(CLIDocumentEventHandler):
             self._json_example(doc, param)
             doc.style.end_codeblock()
             doc.style.new_paragraph()
+
+    def _doc_member(self, doc, member_name, member):
+        docs = member.get('documentation', '')
+        if member_name:
+            doc.write('%s -> (%s)' % (member_name, member['type']))
+        else:
+            doc.write('(%s)' % member['type'])
+        doc.style.indent()
+        doc.style.new_paragraph()
+        doc.include_doc_string(docs)
+        doc.style.new_paragraph()
+        if member['type'] == 'structure':
+            for sub_name in member['members']:
+                sub_member = member['members'][sub_name]
+                self._doc_member(doc, sub_name, sub_member)
+        elif member['type'] == 'map':
+            keys = member['keys']
+            self._doc_member(doc, keys.get('xmlname', 'key'), keys)
+            members = member['members']
+            self._doc_member(doc, members.get('xmlname', 'value'), members)
+        elif member['type'] == 'list':
+            self._doc_member(doc, '', member['members'])
+        doc.style.dedent()
+        doc.style.new_paragraph()
+
+    def doc_output(self, help_command, event_name, **kwargs):
+        doc = help_command.doc
+        doc.style.h2('Output')
+        operation = help_command.obj
+        output = operation.output
+        if output is None:
+            doc.write('None')
+        else:
+            for member_name in output['members']:
+                member = output['members'][member_name]
+                self._doc_member(doc, member_name, member)
+    
