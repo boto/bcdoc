@@ -24,7 +24,7 @@ import unittest
 
 import six
 
-from bcdoc.clidocs import ReSTDocument
+from bcdoc.restdoc import ReSTDocument
 
 
 class TestReSTDocument(unittest.TestCase):

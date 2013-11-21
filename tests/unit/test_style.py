@@ -25,7 +25,7 @@ import unittest
 import six
 
 from bcdoc.style import ReSTStyle
-from bcdoc.clidocs import ReSTDocument
+from bcdoc.restdoc import ReSTDocument
 
 
 class TestStyle(unittest.TestCase):
