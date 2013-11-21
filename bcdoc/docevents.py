@@ -24,6 +24,7 @@ DOC_EVENTS = {
     'doc-option-example': '.%s.%s.%s',
     'doc-options-end': '.%s.%s',
     'doc-examples': '.%s.%s',
+    'doc-output': '.%s.%s',
     'doc-subitems-start': '.%s.%s',
     'doc-subitem': '.%s.%s.%s',
     'doc-subitems-end': '.%s.%s',
@@ -83,4 +84,6 @@ def generate_events(session, help_command):
     fire_event(session, 'doc-subitems-end', help_command.event_class,
                help_command.name, help_command=help_command)
     fire_event(session, 'doc-examples', help_command.event_class,
+               help_command.name, help_command=help_command)
+    fire_event(session, 'doc-output', help_command.event_class,
                help_command.name, help_command=help_command)
