@@ -62,21 +62,24 @@ class TestStyle(unittest.TestCase):
     def test_h1(self):
         style = ReSTStyle(ReSTDocument())
         style.h1('foobar fiebaz')
-        self.assertEqual(style.doc.getvalue(),
-                         six.b('\n\n*************\nfoobar fiebaz\n*************\n\n'))
-        
+        self.assertEqual(
+            style.doc.getvalue(),
+            six.b('\n\n*************\nfoobar fiebaz\n*************\n\n'))
+
     def test_h2(self):
         style = ReSTStyle(ReSTDocument())
         style.h2('foobar fiebaz')
-        self.assertEqual(style.doc.getvalue(),
-                         six.b('\n\n=============\nfoobar fiebaz\n=============\n\n'))
-        
+        self.assertEqual(
+            style.doc.getvalue(),
+            six.b('\n\n=============\nfoobar fiebaz\n=============\n\n'))
+
     def test_h3(self):
         style = ReSTStyle(ReSTDocument())
         style.h3('foobar fiebaz')
-        self.assertEqual(style.doc.getvalue(),
-                         six.b('\n\n-------------\nfoobar fiebaz\n-------------\n\n'))
-        
+        self.assertEqual(
+            style.doc.getvalue(),
+            six.b('\n\n-------------\nfoobar fiebaz\n-------------\n\n'))
+
     def test_ref(self):
         style = ReSTStyle(ReSTDocument())
         style.ref('foobar', 'http://foo.bar.com')
@@ -90,7 +93,7 @@ class TestStyle(unittest.TestCase):
         self.assertFalse(style.doc.keep_data)
         style.end_examples()
         self.assertTrue(style.doc.keep_data)
-        
+
     def test_codeblock(self):
         style = ReSTStyle(ReSTDocument())
         style.codeblock('foobar')
@@ -103,9 +106,11 @@ class TestStyle(unittest.TestCase):
         style.toctree()
         style.tocitem('foo')
         style.tocitem('bar')
-        self.assertEqual(style.doc.getvalue(),
-                         six.b('\n.. toctree::\n  :maxdepth: 1\n  :titlesonly:\n\n  foo\n  bar\n'))
-        
+        self.assertEqual(
+            style.doc.getvalue(),
+            six.b('\n.. toctree::\n  :maxdepth: 1'
+                  '\n  :titlesonly:\n\n  foo\n  bar\n'))
+
     def test_toctree_man(self):
         style = ReSTStyle(ReSTDocument())
         style.doc.target = 'man'
@@ -114,4 +119,3 @@ class TestStyle(unittest.TestCase):
         style.tocitem('bar')
         self.assertEqual(style.doc.getvalue(),
                          six.b('\n\n\n* foo\n\n\n* bar\n\n'))
-        
