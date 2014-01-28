@@ -119,3 +119,14 @@ class TestStyle(unittest.TestCase):
         style.tocitem('bar')
         self.assertEqual(style.doc.getvalue(),
                          six.b('\n\n\n* foo\n\n\n* bar\n\n'))
+
+    def test_escape_href_link(self):
+        style = ReSTStyle(ReSTDocument())
+        style.start_a(attrs=[('href', 'http://example.org')])
+        style.doc.write('foo: the next bar')
+        style.end_a()
+        self.assertEqual(
+            style.doc.getvalue(),
+            six.b('`foo\\: the next bar`_ \n\n.. _foo\\: the next '
+                  'bar: http://example.org\n'))
+
