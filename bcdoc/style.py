@@ -186,6 +186,10 @@ class ReSTStyle(BaseStyle):
                     self.a_href = attr_value
                     self.doc.write('`')
         else:
+            # There are some model documentation that
+            # looks like this: <a>DescribeInstances</a>.
+            # In this case we just write out an empty
+            # string.
             self.doc.write(' ')
         self.doc.do_translation = True
 
@@ -198,6 +202,8 @@ class ReSTStyle(BaseStyle):
             last_write = self.doc.pop_write()
             last_write = last_write.rstrip(' ')
             if last_write:
+                if ':' in last_write:
+                    last_write = last_write.replace(':', r'\:')
                 self.doc.push_write(last_write)
                 self.doc.hrefs[last_write] = self.a_href
             else:
