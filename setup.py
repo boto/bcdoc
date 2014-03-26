@@ -25,7 +25,7 @@ setup(
     long_description=open('README.rst').read(),
     author='Mitch Garnaat',
     author_email='mitch@garnaat.com',
-    url='https://github.com/botocore/bcdoc',
+    url='https://github.com/boto/bcdoc',
     packages=packages,
     package_dir={'bcdoc': 'bcdoc'},
     install_requires=requires,
