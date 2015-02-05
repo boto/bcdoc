@@ -14,7 +14,7 @@ packages = [
     'bcdoc',
 ]
 
-requires = ['six>=1.1.0',
+requires = ['six>=1.8.0,<2.0.0',
             'docutils>=0.10']
 
 
