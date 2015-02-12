@@ -28,6 +28,9 @@ DOC_EVENTS = {
     'doc-subitems-start': '.%s.%s',
     'doc-subitem': '.%s.%s.%s',
     'doc-subitems-end': '.%s.%s',
+    'doc-relateditems-start': '.%s.%s',
+    'doc-relateditem': '.%s.%s.%s',
+    'doc-relateditems-end': '.%s.%s'
     }
 
 
@@ -96,4 +99,13 @@ def generate_events(session, help_command):
     fire_event(session, 'doc-examples', help_command.event_class,
                help_command.name, help_command=help_command)
     fire_event(session, 'doc-output', help_command.event_class,
+               help_command.name, help_command=help_command)
+    fire_event(session, 'doc-relateditems-start', help_command.event_class,
+               help_command.name, help_command=help_command)
+    if help_command.related_items:
+        for related_item in sorted(help_command.related_items):
+            fire_event(session, 'doc-relateditem', help_command.event_class,
+                       help_command.name, related_item,
+                       help_command=help_command, related_item=related_item)
+    fire_event(session, 'doc-relateditems-end', help_command.event_class,
                help_command.name, help_command=help_command)
