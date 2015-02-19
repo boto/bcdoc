@@ -13,24 +13,24 @@
 
 
 DOC_EVENTS = {
-    'doc-breadcrumbs': '.%s.%s',
-    'doc-title': '.%s.%s',
-    'doc-description': '.%s.%s',
-    'doc-synopsis-start': '.%s.%s',
-    'doc-synopsis-option': '.%s.%s.%s',
-    'doc-synopsis-end': '.%s.%s',
-    'doc-options-start': '.%s.%s',
-    'doc-option': '.%s.%s.%s',
-    'doc-option-example': '.%s.%s.%s',
-    'doc-options-end': '.%s.%s',
-    'doc-examples': '.%s.%s',
-    'doc-output': '.%s.%s',
-    'doc-subitems-start': '.%s.%s',
-    'doc-subitem': '.%s.%s.%s',
-    'doc-subitems-end': '.%s.%s',
-    'doc-relateditems-start': '.%s.%s',
-    'doc-relateditem': '.%s.%s.%s',
-    'doc-relateditems-end': '.%s.%s'
+    'doc-breadcrumbs': '.%s',
+    'doc-title': '.%s',
+    'doc-description': '.%s',
+    'doc-synopsis-start': '.%s',
+    'doc-synopsis-option': '.%s.%s',
+    'doc-synopsis-end': '.%s',
+    'doc-options-start': '.%s',
+    'doc-option': '.%s.%s',
+    'doc-option-example': '.%s.%s',
+    'doc-options-end': '.%s',
+    'doc-examples': '.%s',
+    'doc-output': '.%s',
+    'doc-subitems-start': '.%s',
+    'doc-subitem': '.%s.%s',
+    'doc-subitems-end': '.%s',
+    'doc-relateditems-start': '.%s',
+    'doc-relateditem': '.%s.%s',
+    'doc-relateditems-end': '.%s'
     }
 
 
@@ -46,13 +46,13 @@ def generate_events(session, help_command):
                                DOC_EVENTS[event_name])
     # Now generate the documentation events
     fire_event(session, 'doc-breadcrumbs', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     fire_event(session, 'doc-title', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     fire_event(session, 'doc-description', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     fire_event(session, 'doc-synopsis-start', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     if help_command.arg_table:
         for arg_name in help_command.arg_table:
             # An argument can set an '_UNDOCUMENTED' attribute
@@ -63,49 +63,46 @@ def generate_events(session, help_command):
                        '_UNDOCUMENTED', False):
                 continue
             fire_event(session, 'doc-synopsis-option',
-                       help_command.event_class,
-                       help_command.name, arg_name,
+                       help_command.event_class, arg_name,
                        arg_name=arg_name, help_command=help_command)
     fire_event(session, 'doc-synopsis-end', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     fire_event(session, 'doc-options-start', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     if help_command.arg_table:
         for arg_name in help_command.arg_table:
             if getattr(help_command.arg_table[arg_name],
                        '_UNDOCUMENTED', False):
                 continue
             fire_event(session, 'doc-option', help_command.event_class,
-                       help_command.name, arg_name,
-                       arg_name=arg_name, help_command=help_command)
+                       arg_name, arg_name=arg_name, help_command=help_command)
             fire_event(session, 'doc-option-example',
                        help_command.event_class,
-                       help_command.name, arg_name,
-                       arg_name=arg_name, help_command=help_command)
+                       arg_name, arg_name=arg_name, help_command=help_command)
     fire_event(session, 'doc-options-end', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     fire_event(session, 'doc-subitems-start', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     if help_command.command_table:
         for command_name in sorted(help_command.command_table.keys()):
             if hasattr(help_command.command_table[command_name],
                        '_UNDOCUMENTED'):
                 continue
             fire_event(session, 'doc-subitem', help_command.event_class,
-                       help_command.name, command_name,
-                       command_name=command_name, help_command=help_command)
+                       command_name, command_name=command_name,
+                       help_command=help_command)
     fire_event(session, 'doc-subitems-end', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     fire_event(session, 'doc-examples', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     fire_event(session, 'doc-output', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     fire_event(session, 'doc-relateditems-start', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
     if help_command.related_items:
         for related_item in sorted(help_command.related_items):
             fire_event(session, 'doc-relateditem', help_command.event_class,
-                       help_command.name, related_item,
-                       help_command=help_command, related_item=related_item)
+                       related_item, help_command=help_command,
+                       related_item=related_item)
     fire_event(session, 'doc-relateditems-end', help_command.event_class,
-               help_command.name, help_command=help_command)
+               help_command=help_command)
