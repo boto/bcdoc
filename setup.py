@@ -14,13 +14,13 @@ packages = [
     'bcdoc',
 ]
 
-requires = ['six>=1.1.0',
+requires = ['six>=1.8.0,<2.0.0',
             'docutils>=0.10']
 
 
 setup(
     name='bcdoc',
-    version='0.12.2',
+    version='0.13.0',
     description='ReST document generation tools for botocore.',
     long_description=open('README.rst').read(),
     author='Mitch Garnaat',
