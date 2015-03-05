@@ -120,6 +120,27 @@ class TestStyle(unittest.TestCase):
         self.assertEqual(style.doc.getvalue(),
                          six.b('\n\n\n* foo\n\n\n* bar\n\n'))
 
+    def test_hidden_toctree_html(self):
+        style = ReSTStyle(ReSTDocument())
+        style.doc.target = 'html'
+        style.hidden_toctree()
+        style.hidden_tocitem('foo')
+        style.hidden_tocitem('bar')
+        self.assertEqual(
+            style.doc.getvalue(),
+            six.b('\n.. toctree::\n  :maxdepth: 1'
+                  '\n  :hidden:\n\n  foo\n  bar\n'))
+
+    def test_hidden_toctree_non_html(self):
+        style = ReSTStyle(ReSTDocument())
+        style.doc.target = 'man'
+        style.hidden_toctree()
+        style.hidden_tocitem('foo')
+        style.hidden_tocitem('bar')
+        self.assertEqual(
+            style.doc.getvalue(),
+            six.b(''))
+
     def test_escape_href_link(self):
         style = ReSTStyle(ReSTDocument())
         style.start_a(attrs=[('href', 'http://example.org')])
@@ -134,4 +155,29 @@ class TestStyle(unittest.TestCase):
         style = ReSTStyle(ReSTDocument())
         style.start_a(attrs=[('href', 'http://example.org')])
         style.end_a()
-        self.assertEqual(style.doc.getvalue(), six.b('`<http://example.org>`_ '))
+        self.assertEqual(style.doc.getvalue(),
+                         six.b('`<http://example.org>`_ '))
+
+    def test_sphinx_reference_label_html(self):
+        style = ReSTStyle(ReSTDocument())
+        style.doc.target = 'html'
+        style.sphinx_reference_label('foo', 'bar')
+        self.assertEqual(style.doc.getvalue(), six.b(':ref:`bar <foo>`'))
+
+    def test_sphinx_reference_label_html_no_text(self):
+        style = ReSTStyle(ReSTDocument())
+        style.doc.target = 'html'
+        style.sphinx_reference_label('foo')
+        self.assertEqual(style.doc.getvalue(), six.b(':ref:`foo <foo>`'))
+
+    def test_sphinx_reference_label_non_html(self):
+        style = ReSTStyle(ReSTDocument())
+        style.doc.target = 'man'
+        style.sphinx_reference_label('foo', 'bar')
+        self.assertEqual(style.doc.getvalue(), six.b('bar'))
+
+    def test_sphinx_reference_label_non_html_no_text(self):
+        style = ReSTStyle(ReSTDocument())
+        style.doc.target = 'man'
+        style.sphinx_reference_label('foo')
+        self.assertEqual(style.doc.getvalue(), six.b('foo'))

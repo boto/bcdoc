@@ -196,6 +196,14 @@ class ReSTStyle(BaseStyle):
     def link_target_definition(self, refname, link):
         self.doc.writeln('.. _%s: %s' % (refname, link))
 
+    def sphinx_reference_label(self, label, text=None):
+        if text is None:
+            text = label
+        if self.doc.target == 'html':
+            self.doc.write(':ref:`%s <%s>`' % (text, label))
+        else:
+            self.doc.write(text)
+
     def end_a(self):
         self.doc.do_translation = False
         if self.a_href:
@@ -306,3 +314,12 @@ class ReSTStyle(BaseStyle):
             else:
                 self.doc.writeln('  %s' % item)
 
+    def hidden_toctree(self):
+        if self.doc.target == 'html':
+            self.doc.write('\n.. toctree::\n')
+            self.doc.write('  :maxdepth: 1\n')
+            self.doc.write('  :hidden:\n\n')
+
+    def hidden_tocitem(self, item):
+        if self.doc.target == 'html':
+            self.tocitem(item)
