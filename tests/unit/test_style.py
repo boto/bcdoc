@@ -181,3 +181,51 @@ class TestStyle(unittest.TestCase):
         style.doc.target = 'man'
         style.sphinx_reference_label('foo')
         self.assertEqual(style.doc.getvalue(), six.b('foo'))
+
+    def test_table_of_contents(self):
+        style = ReSTStyle(ReSTDocument())
+        style.table_of_contents()
+        self.assertEqual(style.doc.getvalue(), six.b('.. contents:: '))
+
+    def test_table_of_contents_with_title(self):
+        style = ReSTStyle(ReSTDocument())
+        style.table_of_contents(title='Foo')
+        self.assertEqual(style.doc.getvalue(), six.b('.. contents:: Foo\n'))
+
+    def test_table_of_contents_with_title_and_depth(self):
+        style = ReSTStyle(ReSTDocument())
+        style.table_of_contents(title='Foo', depth=2)
+        self.assertEqual(style.doc.getvalue(),
+                         six.b('.. contents:: Foo\n   :depth: 2\n'))
+
+    def test_sphinx_py_class(self):
+        style = ReSTStyle(ReSTDocument())
+        style.start_sphinx_py_class('FooClass')
+        style.end_sphinx_py_class()
+        self.assertEqual(style.doc.getvalue(),
+                         six.b('\n\n.. py:class:: FooClass\n\n  \n\n'))
+
+    def test_sphinx_py_method(self):
+        style = ReSTStyle(ReSTDocument())
+        style.start_sphinx_py_method('method')
+        style.end_sphinx_py_method()
+        self.assertEqual(style.doc.getvalue(),
+                         six.b('\n\n.. py:method:: method\n\n  \n\n'))
+
+    def test_sphinx_py_method_with_params(self):
+        style = ReSTStyle(ReSTDocument())
+        style.start_sphinx_py_method('method', 'foo=None')
+        style.end_sphinx_py_method()
+        self.assertEqual(
+            style.doc.getvalue(),
+            six.b('\n\n.. py:method:: method(foo=None)\n\n  \n\n'))
+
+    def test_write_py_doc_string(self):
+        style = ReSTStyle(ReSTDocument())
+        docstring = (
+            'This describes a function\n'
+            ':param foo: Describes foo\n'
+            'returns: None'
+        )
+        style.write_py_doc_string(docstring)
+        self.assertEqual(style.doc.getvalue(), six.b(docstring + '\n'))
