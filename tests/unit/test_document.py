@@ -55,9 +55,7 @@ class TestReSTDocument(unittest.TestCase):
 class TestDocumentStructure(unittest.TestCase):
     def setUp(self):
         self.name = 'mydoc'
-        self.event_emitter = mock.Mock()
-        self.doc_structure = DocumentStructure(
-            self.name, self.event_emitter)
+        self.doc_structure = DocumentStructure(self.name)
 
     def test_name(self):
         self.assertEqual(self.doc_structure.name, self.name)
@@ -89,13 +87,6 @@ class TestDocumentStructure(unittest.TestCase):
         self.assertEqual(section.hrefs,
                          self.doc_structure.hrefs)
 
-        # Ensure the event fired is as expected
-        events_called = self.event_emitter.emit.call_args_list
-        self.assertEqual(len(events_called), 1)
-        self.assertEqual(
-            events_called[0],
-            mock.call('docs-adding-section.mydoc-mysection', section=section))
-
     def test_delete_section(self):
         section = self.doc_structure.add_new_section('mysection')
         self.assertEqual(
@@ -107,16 +98,11 @@ class TestDocumentStructure(unittest.TestCase):
     def test_create_sections_at_instantiation(self):
         sections = ['intro', 'middle', 'end']
         self.doc_structure = DocumentStructure(
-            self.name, self.event_emitter, section_names=sections)
-        events_called = self.event_emitter.emit.call_args_list
-
-        # Ensure the sections are created, exist, and are emitted.
-        self.assertEqual(len(events_called), 3)
-        for i, section in enumerate(sections):
-            self.assertEqual(
-                events_called[i],
-                mock.call('docs-adding-section.mydoc-%s' % section,
-                          section=self.doc_structure.get_section(section)))
+            self.name, section_names=sections)
+        # Ensure the sections are attached to the new document structure.
+        for section_name in sections:
+            section = self.doc_structure.get_section(section_name)
+            self.assertEqual(section.name, section_name)
 
     def test_flush_structure(self):
         section = self.doc_structure.add_new_section('mysection')
@@ -130,27 +116,6 @@ class TestDocumentStructure(unittest.TestCase):
 
         # Ensure the contents were flushed out correctly
         self.assertEqual(contents, six.b('1\n2\n3\n4\n'))
-
-        # Ensure the sections are emitted.
-        events_called = self.event_emitter.emit.call_args_list
-        self.assertEqual(len(events_called), 7)
-        events_called = events_called[3:]
-        self.assertEqual(
-            events_called[0],
-            mock.call('docs-flushing-structure.mydoc',
-                      structure=self.doc_structure))
-        self.assertEqual(
-            events_called[1],
-            mock.call('docs-flushing-structure.mydoc-mysection',
-                      structure=section))
-        self.assertEqual(
-            events_called[2],
-            mock.call('docs-flushing-structure.mydoc-mysection-mysubsection',
-                      structure=subsection))
-        self.assertEqual(
-            events_called[3],
-            mock.call('docs-flushing-structure.mydoc-mysection2',
-                      structure=second_section))
 
     def test_flush_structure_hrefs(self):
         section = self.doc_structure.add_new_section('mysection')

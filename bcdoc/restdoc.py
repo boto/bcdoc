@@ -103,21 +103,19 @@ class ReSTDocument(object):
 
 
 class DocumentStructure(ReSTDocument):
-    def __init__(self, name, event_emitter, section_names=None, target='man'):
+    def __init__(self, name, section_names=None, target='man'):
         """Provides a Hierarichial structure to a ReSTDocument
 
         You can write to it similiar to as you can to a ReSTDocument but
         has an innate structure for more orginaztion and abstraction.
 
         :param name: The name of the document
-        :param event_emitter: An event emitter used to emit events
         :param section_names: A list of sections to be included
             in the document.
         :parma target: The target documentation of the Document structure
         """
         super(DocumentStructure, self).__init__(target=target)
         self._name = name
-        self._event_emitter = event_emitter
         self._structure = OrderedDict()
         self._path = [self._name]
         if section_names is not None:
@@ -158,19 +156,13 @@ class DocumentStructure(ReSTDocument):
             to the document structure it was instantiated from.
         """
         # Add a new section
-        section = DocumentStructure(
-            name=name, event_emitter=self._event_emitter,
-            target=self.target)
+        section = self.__class__(name=name, target=self.target)
         section.path = self.path + [name]
         # Indent the section apporpriately as well
         section.style.indentation = self.style.indentation
         section.translation_map = self.translation_map
         section.hrefs = self.hrefs
         self._structure[name] = section
-        # Emit an event for handlers to hook into and edit the section
-        self._event_emitter.emit(
-            'docs-adding-section.%s' % '-'.join(section.path),
-            section=section)
         return section
 
     def get_section(self, name):
@@ -187,11 +179,6 @@ class DocumentStructure(ReSTDocument):
         The document is flushed out in a DFS style where sections and their
         subsections' values are added to the string as they are visited.
         """
-        # Recurse through all sections calling getvalue() to generate
-        # the section.
-        self._event_emitter.emit(
-            'docs-flushing-structure.%s' % '-'.join(self.path),
-            structure=self)
         # We are at the root flush the links at the beginning of the
         # document
         if len(self.path) == 1:
