@@ -21,7 +21,6 @@
 # IN THE SOFTWARE.
 #
 import six
-import mock
 
 from tests import unittest
 from bcdoc.restdoc import ReSTDocument, DocumentStructure

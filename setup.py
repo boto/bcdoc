@@ -3,6 +3,8 @@
 """
 distutils/setuptools install script.
 """
+import sys
+
 
 try:
     from setuptools import setup
