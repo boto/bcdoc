@@ -3,6 +3,8 @@
 """
 distutils/setuptools install script.
 """
+import sys
+
 
 try:
     from setuptools import setup
@@ -17,6 +19,11 @@ packages = [
 requires = ['six>=1.8.0,<2.0.0',
             'docutils>=0.10']
 
+if sys.version_info[:2] == (2, 6):
+    # For python2.6 we have a few other dependencies.
+    # First we need an ordered dictionary so we use the
+    # 2.6 backport.
+    requires.append('ordereddict==1.1')
 
 setup(
     name='bcdoc',

@@ -24,6 +24,14 @@ class BaseStyle(object):
         self._indent = 0
         self.keep_data = True
 
+    @property
+    def indentation(self):
+        return self._indent
+
+    @indentation.setter
+    def indentation(self, value):
+        self._indent = value
+
     def new_paragraph(self):
         return '\n%s' % self.spaces()
 
@@ -323,3 +331,38 @@ class ReSTStyle(BaseStyle):
     def hidden_tocitem(self, item):
         if self.doc.target == 'html':
             self.tocitem(item)
+
+    def table_of_contents(self, title=None, depth=None):
+        self.doc.write('.. contents:: ')
+        if title is not None:
+            self.doc.writeln(title)
+        if depth is not None:
+            self.doc.writeln('   :depth: %s' % depth)
+
+    def start_sphinx_py_class(self, class_name):
+        self.new_paragraph()
+        self.doc.write('.. py:class:: %s' % class_name)
+        self.indent()
+        self.new_paragraph()
+
+    def end_sphinx_py_class(self):
+        self.dedent()
+        self.new_paragraph()
+
+    def start_sphinx_py_method(self, method_name, parameters=None):
+        self.new_paragraph()
+        content = '.. py:method:: %s' % method_name
+        if parameters is not None:
+            content += '(%s)' % parameters
+        self.doc.write(content)
+        self.indent()
+        self.new_paragraph()
+
+    def end_sphinx_py_method(self):
+        self.dedent()
+        self.new_paragraph()
+
+    def write_py_doc_string(self, docstring):
+        docstring_lines = docstring.splitlines()
+        for docstring_line in docstring_lines:
+            self.doc.writeln(docstring_line)
