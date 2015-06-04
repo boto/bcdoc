@@ -20,11 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #
-import unittest
-
 import six
 
-from bcdoc.restdoc import ReSTDocument
+from tests import unittest
+from bcdoc.restdoc import ReSTDocument, DocumentStructure
 
 
 class TestReSTDocument(unittest.TestCase):
@@ -50,4 +49,78 @@ class TestReSTDocument(unittest.TestCase):
         doc.include_doc_string('<p>this is a <code>test</code></p>')
         doc.remove_last_doc_string()
         self.assertEqual(doc.getvalue(), six.b('foo\n'))
-        
+
+
+class TestDocumentStructure(unittest.TestCase):
+    def setUp(self):
+        self.name = 'mydoc'
+        self.doc_structure = DocumentStructure(self.name)
+
+    def test_name(self):
+        self.assertEqual(self.doc_structure.name, self.name)
+
+    def test_path(self):
+        self.assertEqual(self.doc_structure.path, [self.name])
+        self.doc_structure.path = ['foo']
+        self.assertEqual(self.doc_structure.path, ['foo'])
+
+    def test_add_new_section(self):
+        section = self.doc_structure.add_new_section('mysection')
+
+        # Ensure the name of the section is correct
+        self.assertEqual(section.name, 'mysection')
+
+        # Ensure we can get the section.
+        self.assertEqual(
+            self.doc_structure.get_section('mysection'), section)
+
+        # Ensure the path is correct
+        self.assertEqual(section.path, ['mydoc', 'mysection'])
+
+        # Ensure some of the necessary attributes are passed to the
+        # the section.
+        self.assertEqual(section.style.indentation,
+                         self.doc_structure.style.indentation)
+        self.assertEqual(section.translation_map,
+                         self.doc_structure.translation_map)
+        self.assertEqual(section.hrefs,
+                         self.doc_structure.hrefs)
+
+    def test_delete_section(self):
+        section = self.doc_structure.add_new_section('mysection')
+        self.assertEqual(
+            self.doc_structure.get_section('mysection'), section)
+        self.doc_structure.delete_section('mysection')
+        with self.assertRaises(KeyError):
+            section.get_section('mysection')
+
+    def test_create_sections_at_instantiation(self):
+        sections = ['intro', 'middle', 'end']
+        self.doc_structure = DocumentStructure(
+            self.name, section_names=sections)
+        # Ensure the sections are attached to the new document structure.
+        for section_name in sections:
+            section = self.doc_structure.get_section(section_name)
+            self.assertEqual(section.name, section_name)
+
+    def test_flush_structure(self):
+        section = self.doc_structure.add_new_section('mysection')
+        subsection = section.add_new_section('mysubsection')
+        self.doc_structure.writeln('1')
+        section.writeln('2')
+        subsection.writeln('3')
+        second_section = self.doc_structure.add_new_section('mysection2')
+        second_section.writeln('4')
+        contents = self.doc_structure.flush_structure()
+
+        # Ensure the contents were flushed out correctly
+        self.assertEqual(contents, six.b('1\n2\n3\n4\n'))
+
+    def test_flush_structure_hrefs(self):
+        section = self.doc_structure.add_new_section('mysection')
+        section.writeln('section contents')
+        self.doc_structure.hrefs['foo'] = 'www.foo.com'
+        section.hrefs['bar'] = 'www.bar.com'
+        contents = self.doc_structure.flush_structure()
+        self.assertIn(six.b('.. _foo: www.foo.com'), contents)
+        self.assertIn(six.b('.. _bar: www.bar.com'), contents)

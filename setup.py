@@ -1,18 +1,9 @@
 #!/usr/bin/env python
+import sys
 
-"""
-distutils/setuptools install script.
-"""
 
-try:
-    from setuptools import setup
-    setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
-packages = [
-    'bcdoc',
-]
 
 requires = ['six>=1.8.0,<2.0.0',
             'docutils>=0.10']
@@ -20,16 +11,18 @@ requires = ['six>=1.8.0,<2.0.0',
 
 setup(
     name='bcdoc',
-    version='0.14.0',
+    version='0.15.0',
     description='ReST document generation tools for botocore.',
     long_description=open('README.rst').read(),
-    author='Mitch Garnaat',
-    author_email='mitch@garnaat.com',
+    author='Amazon Web Services',
     url='https://github.com/botocore/bcdoc',
-    packages=packages,
+    packages=['bcdoc'],
     package_dir={'bcdoc': 'bcdoc'},
     install_requires=requires,
-    license=open("LICENSE.txt").read(),
+    extras_require={
+        ':python_version=="2.6"': ['ordereddict==1.1'],
+    },
+    license='Apache License 2.0',
     classifiers=(
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -40,8 +33,7 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.0',
-        'Programming Language :: Python :: 3.1',
-        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
     ),
 )
