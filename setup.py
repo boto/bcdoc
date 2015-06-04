@@ -9,13 +9,6 @@ requires = ['six>=1.8.0,<2.0.0',
             'docutils>=0.10']
 
 
-if sys.version_info[:2] == (2, 6):
-    # For python2.6 we have a few other dependencies.
-    # First we need an ordered dictionary so we use the
-    # 2.6 backport.
-    requires.append('ordereddict==1.1')
-
-
 setup(
     name='bcdoc',
     version='0.14.0',
@@ -26,6 +19,9 @@ setup(
     packages=['bcdoc'],
     package_dir={'bcdoc': 'bcdoc'},
     install_requires=requires,
+    extras_require={
+        ':python_version=="2.6"': ['ordereddict==1.1'],
+    },
     license='Apache License 2.0',
     classifiers=(
         'Development Status :: 3 - Alpha',
