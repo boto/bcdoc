@@ -140,7 +140,7 @@ class DocumentStructure(ReSTDocument):
 
     @property
     def available_sections(self):
-        return list(self._structure.keys())
+        return list(self._structure)
 
     def _generate_structure(self, section_names):
         for section_name in section_names:
