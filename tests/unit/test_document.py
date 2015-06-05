@@ -124,3 +124,11 @@ class TestDocumentStructure(unittest.TestCase):
         contents = self.doc_structure.flush_structure()
         self.assertIn(six.b('.. _foo: www.foo.com'), contents)
         self.assertIn(six.b('.. _bar: www.bar.com'), contents)
+
+    def test_available_sections(self):
+        self.doc_structure.add_new_section('mysection')
+        self.doc_structure.add_new_section('mysection2')
+        self.assertEqual(
+            self.doc_structure.available_sections,
+            ['mysection', 'mysection2']
+        )
