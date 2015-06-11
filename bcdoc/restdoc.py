@@ -138,6 +138,10 @@ class DocumentStructure(ReSTDocument):
     def path(self, value):
         self._path = value
 
+    @property
+    def available_sections(self):
+        return list(self._structure)
+
     def _generate_structure(self, section_names):
         for section_name in section_names:
             self.add_new_section(section_name)

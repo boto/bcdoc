@@ -11,7 +11,7 @@ requires = ['six>=1.8.0,<2.0.0',
 
 setup(
     name='bcdoc',
-    version='0.15.0',
+    version='0.16.0',
     description='ReST document generation tools for botocore.',
     long_description=open('README.rst').read(),
     author='Amazon Web Services',
