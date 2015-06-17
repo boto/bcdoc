@@ -1,4 +1,4 @@
-# Copyright 2012-2013 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2012-2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -34,25 +34,16 @@ DOC_EVENTS = {
     }
 
 
-def fire_event(session, event_name, *fmtargs, **kwargs):
-    event = session.create_event(event_name, *fmtargs)
-    session.emit(event, **kwargs)
-
-
 def generate_events(session, help_command):
-    # First, register all events
-    for event_name in DOC_EVENTS:
-        session.register_event(event_name,
-                               DOC_EVENTS[event_name])
     # Now generate the documentation events
-    fire_event(session, 'doc-breadcrumbs', help_command.event_class,
-               help_command=help_command)
-    fire_event(session, 'doc-title', help_command.event_class,
-               help_command=help_command)
-    fire_event(session, 'doc-description', help_command.event_class,
-               help_command=help_command)
-    fire_event(session, 'doc-synopsis-start', help_command.event_class,
-               help_command=help_command)
+    session.emit('doc-breadcrumbs.%s' % help_command.event_class,
+                 help_command=help_command)
+    session.emit('doc-title.%s' % help_command.event_class,
+                 help_command=help_command)
+    session.emit('doc-description.%s' % help_command.event_class,
+                 help_command=help_command)
+    session.emit('doc-synopsis-start.%s' % help_command.event_class,
+                 help_command=help_command)
     if help_command.arg_table:
         for arg_name in help_command.arg_table:
             # An argument can set an '_UNDOCUMENTED' attribute
@@ -62,47 +53,51 @@ def generate_events(session, help_command):
             if getattr(help_command.arg_table[arg_name],
                        '_UNDOCUMENTED', False):
                 continue
-            fire_event(session, 'doc-synopsis-option',
-                       help_command.event_class, arg_name,
-                       arg_name=arg_name, help_command=help_command)
-    fire_event(session, 'doc-synopsis-end', help_command.event_class,
-               help_command=help_command)
-    fire_event(session, 'doc-options-start', help_command.event_class,
-               help_command=help_command)
+            session.emit(
+                'doc-synopsis-option.%s.%s' % (help_command.event_class,
+                                               arg_name),
+                arg_name=arg_name, help_command=help_command)
+    session.emit('doc-synopsis-end.%s' % help_command.event_class,
+                 help_command=help_command)
+    session.emit('doc-options-start.%s' % help_command.event_class,
+                 help_command=help_command)
     if help_command.arg_table:
         for arg_name in help_command.arg_table:
             if getattr(help_command.arg_table[arg_name],
                        '_UNDOCUMENTED', False):
                 continue
-            fire_event(session, 'doc-option', help_command.event_class,
-                       arg_name, arg_name=arg_name, help_command=help_command)
-            fire_event(session, 'doc-option-example',
-                       help_command.event_class,
-                       arg_name, arg_name=arg_name, help_command=help_command)
-    fire_event(session, 'doc-options-end', help_command.event_class,
-               help_command=help_command)
-    fire_event(session, 'doc-subitems-start', help_command.event_class,
-               help_command=help_command)
+            session.emit('doc-option.%s.%s' % (help_command.event_class,
+                                               arg_name),
+                         arg_name=arg_name, help_command=help_command)
+            session.emit('doc-option-example.%s.%s' %
+                         (help_command.event_class, arg_name),
+                         arg_name=arg_name, help_command=help_command)
+    session.emit('doc-options-end.%s' % help_command.event_class,
+                 help_command=help_command)
+    session.emit('doc-subitems-start.%s' % help_command.event_class,
+                 help_command=help_command)
     if help_command.command_table:
         for command_name in sorted(help_command.command_table.keys()):
             if hasattr(help_command.command_table[command_name],
                        '_UNDOCUMENTED'):
                 continue
-            fire_event(session, 'doc-subitem', help_command.event_class,
-                       command_name, command_name=command_name,
-                       help_command=help_command)
-    fire_event(session, 'doc-subitems-end', help_command.event_class,
-               help_command=help_command)
-    fire_event(session, 'doc-examples', help_command.event_class,
-               help_command=help_command)
-    fire_event(session, 'doc-output', help_command.event_class,
-               help_command=help_command)
-    fire_event(session, 'doc-relateditems-start', help_command.event_class,
-               help_command=help_command)
+            session.emit('doc-subitem.%s.%s'
+                         % (help_command.event_class, command_name),
+                         command_name=command_name,
+                         help_command=help_command)
+    session.emit('doc-subitems-end.%s' % help_command.event_class,
+                 help_command=help_command)
+    session.emit('doc-examples.%s' % help_command.event_class,
+                 help_command=help_command)
+    session.emit('doc-output.%s' % help_command.event_class,
+                 help_command=help_command)
+    session.emit('doc-relateditems-start.%s' % help_command.event_class,
+                 help_command=help_command)
     if help_command.related_items:
         for related_item in sorted(help_command.related_items):
-            fire_event(session, 'doc-relateditem', help_command.event_class,
-                       related_item, help_command=help_command,
-                       related_item=related_item)
-    fire_event(session, 'doc-relateditems-end', help_command.event_class,
-               help_command=help_command)
+            session.emit('doc-relateditem.%s.%s'
+                         % (help_command.event_class, related_item),
+                         help_command=help_command,
+                         related_item=related_item)
+    session.emit('doc-relateditems-end.%s' % help_command.event_class,
+                 help_command=help_command)
