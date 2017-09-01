@@ -106,7 +106,7 @@ class DocumentStructure(ReSTDocument):
     def __init__(self, name, section_names=None, target='man'):
         """Provides a Hierarichial structure to a ReSTDocument
 
-        You can write to it similiar to as you can to a ReSTDocument but
+        You can write to it similar to as you can to a ReSTDocument but
         has an innate structure for more orginaztion and abstraction.
 
         :param name: The name of the document
